@@ -1,0 +1,9 @@
+node_modules
+dist
+.git
+.gitignore
+*.log
+tests
+data/*.sqlite*
+data/backups/*
+auth_info_baileys/*
