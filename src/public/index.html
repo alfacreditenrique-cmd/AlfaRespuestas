@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AlfaRespuestas - Gestión de Citas | AlfaCredit S.A.</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans antialiased">
+
+  <!-- BARRA DE NAVEGACIÓN SUPERIOR -->
+  <header class="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white shadow-lg sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+      
+      <!-- Logo y Título -->
+      <div class="flex items-center space-x-4">
+        <div class="bg-white/10 p-2.5 rounded-xl backdrop-blur-sm border border-white/20 shadow-inner">
+          <i class="fa-solid fa-briefcase text-2xl text-blue-300"></i>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="text-xs font-bold tracking-wider uppercase px-2 py-0.5 bg-blue-500/30 text-blue-200 rounded-full border border-blue-400/30">AlfaCredit S.A.</span>
+            <span class="text-xs font-medium text-slate-300">Entrevistas 04 y 05 Nov</span>
+          </div>
+          <h1 class="text-xl sm:text-2xl font-black tracking-tight text-white flex items-center gap-2">
+            AlfaRespuestas
+            <span class="text-xs font-normal text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded border border-slate-700">v1.0</span>
+          </h1>
+        </div>
+      </div>
+
+      <!-- Estado WhatsApp & Acciones Rápidas -->
+      <div class="flex items-center space-x-2 sm:space-x-3">
+        
+        <!-- Badge de Conexión de WhatsApp -->
+        <div id="waConnectionBadge" class="flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+          <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+          <span id="waStatusText">Iniciando WhatsApp...</span>
+        </div>
+
+        <!-- Botón Descargar Respaldo -->
+        <a href="/api/backup/download" id="btnDownloadBackup" class="inline-flex items-center space-x-1.5 px-3 py-2 rounded-lg bg-indigo-700 hover:bg-indigo-600 text-white font-medium text-xs sm:text-sm transition shadow-sm hover:shadow" title="Descargar copia de seguridad SQLite en caliente">
+          <i class="fa-solid fa-download"></i>
+          <span class="hidden sm:inline">Respaldo</span>
+        </a>
+
+        <!-- Botón Gestionar Fechas -->
+        <button id="btnOpenDatesModal" class="inline-flex items-center space-x-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-medium text-xs sm:text-sm transition shadow-sm hover:shadow border border-slate-700" title="Configurar y abrir más fechas de entrevistas">
+          <i class="fa-solid fa-calendar-days text-blue-300"></i>
+          <span class="hidden sm:inline">Fechas</span>
+        </button>
+
+        <!-- Botón Exportar a Excel -->
+        <a href="/api/export/excel" class="hidden md:inline-flex items-center space-x-2 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs sm:text-sm transition shadow-sm hover:shadow">
+          <i class="fa-solid fa-file-excel text-base"></i>
+          <span>Excel</span>
+        </a>
+
+        <!-- Botón Nueva Cita -->
+        <button id="btnOpenNewModal" class="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs sm:text-sm transition shadow-sm hover:shadow">
+          <i class="fa-solid fa-plus"></i>
+          <span>Nueva Cita</span>
+        </button>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- CONTENEDOR PRINCIPAL -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 space-y-6 w-full">
+
+    <!-- BANNER DE ALERTA DE CUPOS CRÍTICOS (<= 10 TURNOS) -->
+    <div id="criticalQuotaBanner" class="hidden rounded-xl border-l-4 border-red-500 bg-red-50 p-4 shadow-sm animate-pulse">
+      <div class="flex items-start">
+        <div class="flex-shrink-0 text-red-500 text-2xl mr-3">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <div class="flex-1">
+          <h3 class="text-sm font-bold text-red-800 uppercase tracking-wide">
+            ⚡ ALERTA DE CAPACIDAD CRÍTICA: ¡ÚLTIMOS CUPOS DISPONIBLES!
+          </h3>
+          <p id="criticalQuotaText" class="mt-1 text-sm font-medium text-red-700">
+            Quedan 10 turnos o menos para una o más fechas de entrevistas.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- TARJETAS DE MÉTRICAS Y WHATSAPP QR -->
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+
+      <!-- TARJETAS DINÁMICAS DE FECHAS (Cargadas con app.js) -->
+      <div id="datesCardsContainer" class="contents">
+        <!-- Tarjetas generadas dinámicamente -->
+      </div>
+
+      <!-- TARJETA PLAZAS Y RESUMEN -->
+      <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
+        <div class="flex justify-between items-start">
+          <div>
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Postulaciones</span>
+            <h3 class="text-lg font-bold text-slate-800">Total Candidatos</h3>
+          </div>
+          <div class="bg-emerald-50 text-emerald-700 p-2 rounded-xl">
+            <i class="fa-solid fa-users text-lg"></i>
+          </div>
+        </div>
+        <div class="my-2">
+          <div class="text-3xl font-black text-slate-900" id="totalAgendados">0</div>
+          <div class="text-xs text-slate-500 mt-0.5">Citas confirmadas y reprogramadas</div>
+        </div>
+        <!-- Desglose por plaza -->
+        <div class="space-y-1.5 text-xs pt-2 border-t border-slate-100">
+          <div class="flex justify-between items-center">
+            <span class="text-slate-600 flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-blue-500"></span> Oficial de Crédito
+            </span>
+            <span id="countOficial" class="font-bold text-slate-800">0</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-slate-600 flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-indigo-500"></span> Promotor de Crédito
+            </span>
+            <span id="countPromotor" class="font-bold text-slate-800">0</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-slate-600 flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-purple-500"></span> Desembolsador de Crédito
+            </span>
+            <span id="countDesembolsador" class="font-bold text-slate-800">0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- TARJETA CONEXIÓN WHATSAPP CON QR -->
+      <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
+        <div class="flex justify-between items-center">
+          <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+            <i class="fa-brands fa-whatsapp text-emerald-500 text-lg"></i>
+            WhatsApp Bot
+          </h3>
+          <button id="btnRestartWa" title="Reiniciar sesión WhatsApp" class="text-xs text-slate-400 hover:text-slate-600 p-1">
+            <i class="fa-solid fa-rotate-right"></i>
+          </button>
+        </div>
+
+        <!-- Vista cuando está conectado -->
+        <div id="waConnectedView" class="hidden my-3 text-center py-4 bg-emerald-50/50 rounded-xl border border-emerald-100">
+          <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2 text-xl">
+            <i class="fa-solid fa-check"></i>
+          </div>
+          <p class="text-xs font-bold text-emerald-800">Bot Vinculado y Activo</p>
+          <p id="waConnectedAccount" class="text-xs text-slate-600 mt-0.5">Listo para agendar</p>
+        </div>
+
+        <!-- Vista cuando muestra QR -->
+        <div id="waQrView" class="my-2 text-center">
+          <div class="relative inline-block p-1 bg-white border border-slate-200 rounded-lg shadow-sm">
+            <img id="waQrImage" class="w-28 h-28 mx-auto" alt="Escanea QR de WhatsApp" src="" />
+          </div>
+          <p class="text-[11px] font-semibold text-slate-600 mt-1">Escanea con tu WhatsApp</p>
+          <p class="text-[10px] text-slate-400">Dispositivos vinculados > Vincular un dispositivo</p>
+        </div>
+
+        <!-- Vista cuando está desconectado / cargando -->
+        <div id="waConnectingView" class="my-3 text-center py-5">
+          <div class="inline-block animate-spin text-blue-600 text-2xl mb-1">
+            <i class="fa-solid fa-circle-notch"></i>
+          </div>
+          <p class="text-xs text-slate-500 font-medium">Generando código QR...</p>
+        </div>
+
+        <div class="text-[11px] text-slate-400 text-center border-t border-slate-100 pt-2">
+          Persistencia en <code>./auth_info_baileys</code>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- SECCIÓN DE TABLA DE CITAS -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      
+      <!-- Barra de Filtros y Búsqueda -->
+      <div class="p-4 sm:p-5 border-b border-slate-200 bg-slate-50/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        
+        <!-- Buscador -->
+        <div class="relative flex-1 max-w-md">
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
+          <input type="text" id="searchInput" placeholder="Buscar por candidato, teléfono o notas..." 
+            class="w-full pl-10 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none transition" />
+        </div>
+
+        <!-- Filtros Rápidos -->
+        <div class="flex flex-wrap items-center gap-2.5">
+          
+          <!-- Filtro Fecha -->
+          <select id="filterDate" class="text-xs font-medium bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-700 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <option value="">Todas las Fechas</option>
+            <option value="2025-11-04">Martes 4 de Noviembre</option>
+            <option value="2025-11-05">Miércoles 5 de Noviembre</option>
+          </select>
+
+          <!-- Filtro Plaza -->
+          <select id="filterPosition" class="text-xs font-medium bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-700 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <option value="">Todas las Plazas</option>
+            <option value="Oficial de Crédito">Oficial de Crédito</option>
+            <option value="Promotor de Crédito">Promotor de Crédito</option>
+            <option value="Desembolsador de Crédito">Desembolsador de Crédito</option>
+          </select>
+
+          <!-- Filtro Estado -->
+          <select id="filterStatus" class="text-xs font-medium bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-700 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <option value="">Todos los Estados</option>
+            <option value="confirmada">Confirmada</option>
+            <option value="reprogramada">Reprogramada</option>
+            <option value="cancelada">Cancelada</option>
+            <option value="asistio">Asistió</option>
+            <option value="no_asistio">No Asistió</option>
+          </select>
+
+          <!-- Botón Refrescar -->
+          <button id="btnRefresh" title="Refrescar tabla" class="p-2 text-slate-600 hover:text-blue-600 bg-white border border-slate-200 rounded-lg hover:border-blue-400 transition">
+            <i class="fa-solid fa-arrow-rotate-right text-sm"></i>
+          </button>
+
+        </div>
+      </div>
+
+      <!-- Tabla de Datos -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-slate-100 text-slate-600 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
+            <tr>
+              <th class="py-3.5 px-4 w-12 text-center">#</th>
+              <th class="py-3.5 px-4">Postulante</th>
+              <th class="py-3.5 px-4">Teléfono / WhatsApp</th>
+              <th class="py-3.5 px-4">Plaza Asignada</th>
+              <th class="py-3.5 px-4">Fecha & Turno</th>
+              <th class="py-3.5 px-4 text-center">Estado</th>
+              <th class="py-3.5 px-4 text-center">Notificación</th>
+              <th class="py-3.5 px-4 text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="appointmentsTableBody" class="divide-y divide-slate-100 text-slate-700">
+            <!-- Filas generadas dinámicamente con app.js -->
+            <tr>
+              <td colspan="8" class="text-center py-12 text-slate-400">
+                <i class="fa-solid fa-spinner fa-spin text-2xl mb-2 text-blue-500"></i>
+                <p>Cargando citas programadas...</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pie de Tabla con Total -->
+      <div class="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
+        <div>
+          Mostrando <span id="tableTotalCount" class="font-bold text-slate-800">0</span> cita(s)
+        </div>
+        <div class="flex items-center space-x-2">
+          <span>Actualización en tiempo real vía WebSocket activo</span>
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- MODAL PARA EDITAR / REPROGRAMAR CITA -->
+  <div id="editModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
+    <div class="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 relative animate-scaleIn">
+      
+      <!-- Encabezado Modal -->
+      <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+        <div>
+          <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+            <i class="fa-solid fa-calendar-pen text-blue-600"></i>
+            Editar y Reprogramar Cita
+          </h3>
+          <p class="text-xs text-slate-500">Modifica cualquier dato. Se enviará un aviso automático por WhatsApp al candidato.</p>
+        </div>
+        <button id="btnCloseEditModal" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <!-- Formulario de Edición -->
+      <form id="editForm" class="space-y-4 mt-4">
+        <input type="hidden" id="editId" />
+
+        <!-- Nombre Completo -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nombre Completo del Candidato</label>
+          <input type="text" id="editCandidateName" required class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+        </div>
+
+        <!-- Teléfono y Plaza -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Teléfono / WhatsApp</label>
+            <input type="text" id="editPhoneNumber" required class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Plaza Postulada</label>
+            <select id="editPosition" required class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              <option value="Oficial de Crédito">Oficial de Crédito</option>
+              <option value="Promotor de Crédito">Promotor de Crédito</option>
+              <option value="Desembolsador de Crédito">Desembolsador de Crédito</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Fecha y Turno (Hora) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Fecha de Entrevista</label>
+            <select id="editDate" required class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              <option value="2025-11-04">Martes 4 de Noviembre</option>
+              <option value="2025-11-05">Miércoles 5 de Noviembre</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">
+              Hora de Cita (Turno 15 min)
+            </label>
+            <select id="editTimeSlot" required class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              <!-- Opciones de turnos cargadas dinámicamente -->
+            </select>
+            <p id="editSlotHelper" class="text-[11px] text-slate-500 mt-0.5">Mostrando horarios disponibles</p>
+          </div>
+        </div>
+
+        <!-- Estado y Notas -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Estado de la Cita</label>
+            <select id="editStatus" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              <option value="confirmada">Confirmada</option>
+              <option value="reprogramada">Reprogramada</option>
+              <option value="cancelada">Cancelada</option>
+              <option value="asistio">Asistió</option>
+              <option value="no_asistio">No Asistió</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Notas / Motivo</label>
+            <input type="text" id="editNotes" placeholder="Ej: Cambio solicitado por candidato" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+          </div>
+        </div>
+
+        <!-- Checkbox Enviar Notificación por WhatsApp -->
+        <div class="bg-blue-50/70 border border-blue-200 rounded-xl p-3.5 flex items-start space-x-3">
+          <input type="checkbox" id="editNotifyCandidate" checked class="mt-0.5 w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500" />
+          <label for="editNotifyCandidate" class="text-xs text-blue-900 font-medium cursor-pointer">
+            <span class="font-bold flex items-center gap-1">
+              <i class="fa-brands fa-whatsapp text-emerald-600 text-sm"></i>
+              Notificar automáticamente al postulante por WhatsApp al guardar
+            </span>
+            <span>El sistema le enviará un mensaje formal con los datos actualizados de fecha y hora.</span>
+          </label>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="flex items-center justify-end space-x-3 pt-4 border-t border-slate-100">
+          <button type="button" id="btnCancelEdit" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-lg transition">
+            Cancelar
+          </button>
+          <button type="submit" id="btnSaveEdit" class="px-5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition shadow flex items-center gap-2">
+            <i class="fa-solid fa-floppy-disk"></i>
+            <span>Guardar y Notificar</span>
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL PARA NUEVA CITA MANUAL -->
+  <div id="newModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
+    <div class="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 relative animate-scaleIn">
+      
+      <!-- Encabezado Modal -->
+      <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+        <div>
+          <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+            <i class="fa-solid fa-calendar-plus text-emerald-600"></i>
+            Agendar Nueva Cita Manual
+          </h3>
+          <p class="text-xs text-slate-500">Registrar un candidato directamente desde el panel administrativo.</p>
+        </div>
+        <button id="btnCloseNewModal" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <!-- Formulario Nueva Cita -->
+      <form id="newForm" class="space-y-4 mt-4">
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nombre Completo del Candidato</label>
+          <input type="text" id="newName" placeholder="Ej: Mario René Morales" required class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Teléfono / WhatsApp</label>
+            <input type="text" id="newPhone" placeholder="Ej: 50212345678" required class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Plaza Postulada</label>
+            <select id="newPosition" required class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              <option value="Oficial de Crédito">Oficial de Crédito</option>
+              <option value="Promotor de Crédito">Promotor de Crédito</option>
+              <option value="Desembolsador de Crédito">Desembolsador de Crédito</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Fecha</label>
+            <select id="newDate" required class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              <option value="2025-11-04">Martes 4 de Noviembre</option>
+              <option value="2025-11-05">Miércoles 5 de Noviembre</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Turno Disponible (15 min)</label>
+            <select id="newTimeSlot" required class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Notas / Observaciones</label>
+          <input type="text" id="newNotes" placeholder="Ej: Referido por gerencia" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+        </div>
+
+        <div class="bg-blue-50/70 border border-blue-200 rounded-xl p-3 flex items-start space-x-3">
+          <input type="checkbox" id="newNotifyCandidate" checked class="mt-0.5 w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500" />
+          <label for="newNotifyCandidate" class="text-xs text-blue-900 font-medium cursor-pointer">
+            <span class="font-bold flex items-center gap-1">
+              <i class="fa-brands fa-whatsapp text-emerald-600 text-sm"></i>
+              Enviar ticket de confirmación por WhatsApp al registrar
+            </span>
+          </label>
+        </div>
+
+        <div class="flex items-center justify-end space-x-3 pt-4 border-t border-slate-100">
+          <button type="button" id="btnCancelNew" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-lg transition">
+            Cancelar
+          </button>
+          <button type="submit" id="btnSaveNew" class="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition shadow flex items-center gap-2">
+            <i class="fa-solid fa-check"></i>
+            <span>Agendar Cita</span>
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL PARA GESTIÓN DE FECHAS DE ENTREVISTA -->
+  <div id="datesModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
+    <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 relative animate-scaleIn space-y-5">
+      
+      <!-- Encabezado Modal -->
+      <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+        <div>
+          <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+            <i class="fa-solid fa-calendar-days text-indigo-600"></i>
+            Gestión Dinámica de Fechas de Entrevista
+          </h3>
+          <p class="text-xs text-slate-500">Agrega nuevas fechas de entrevistas y activa o pausa fechas con un solo clic.</p>
+        </div>
+        <button id="btnCloseDatesModal" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <!-- Formulario para Agregar Nueva Fecha -->
+      <form id="addDateForm" class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+          <i class="fa-solid fa-plus-circle text-blue-600"></i>
+          Abrir Nueva Fecha para Entrevistas
+        </h4>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 mb-1">Fecha (Día)</label>
+            <input type="date" id="newDateInput" required class="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 mb-1">Etiqueta Oficial</label>
+            <input type="text" id="newDateLabelInput" placeholder="Ej: Jueves 6 de Noviembre" required class="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 mb-1">Abreviatura</label>
+            <input type="text" id="newDateShortInput" placeholder="Ej: 06/11" class="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+          </div>
+        </div>
+        <div class="flex justify-end pt-1">
+          <button type="submit" id="btnSubmitAddDate" class="px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition shadow flex items-center gap-1.5">
+            <i class="fa-solid fa-plus"></i>
+            <span>Habilitar Fecha en WhatsApp y Panel</span>
+          </button>
+        </div>
+      </form>
+
+      <!-- Tabla de Fechas Actuales -->
+      <div>
+        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700 mb-2.5">
+          Fechas Registradas en el Sistema
+        </h4>
+        <div class="border border-slate-200 rounded-xl overflow-hidden max-h-60 overflow-y-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-100 text-slate-600 font-bold uppercase border-b border-slate-200 sticky top-0">
+              <tr>
+                <th class="py-2.5 px-3">Código (ID)</th>
+                <th class="py-2.5 px-3">Etiqueta</th>
+                <th class="py-2.5 px-3 text-center">Abreviatura</th>
+                <th class="py-2.5 px-3 text-center">Estado</th>
+                <th class="py-2.5 px-3 text-right">Acción</th>
+              </tr>
+            </thead>
+            <tbody id="datesTableBody" class="divide-y divide-slate-100">
+              <!-- Renderizado dinámicamente -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Pie del Modal -->
+      <div class="flex justify-end pt-2 border-t border-slate-100">
+        <button type="button" id="btnDoneDatesModal" class="px-4 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition">
+          Cerrar
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- CONTENEDOR DE NOTIFICACIONES TOAST -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+  <!-- SCRIPT CLIENTE -->
+  <script src="app.js"></script>
+</body>
+</html>
