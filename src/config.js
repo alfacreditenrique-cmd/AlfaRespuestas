@@ -11,6 +11,9 @@ const CONFIG = {
   AUTH_DIR: process.env.AUTH_DIR || (process.env.DATA_DIR ? path.join(dataDir, 'auth_info_baileys') : path.join(__dirname, '..', 'auth_info_baileys')),
   BACKUP_DIR: process.env.BACKUP_DIR || path.join(dataDir, 'backups'),
 
+  // Número de WhatsApp del Administrador para recibir respaldo automático de cada cita
+  ADMIN_PHONE: process.env.ADMIN_PHONE || '50575534509',
+
   // Plazas disponibles
   POSITIONS: [
     { id: '1', title: 'Oficial de Crédito', code: 'OFICIAL' },

@@ -13,6 +13,7 @@ const path = require('path');
 const CONFIG = require('./config');
 const database = require('./database');
 const scheduler = require('./scheduler');
+const backupManager = require('./gitBackup');
 
 class WhatsAppService {
   constructor() {
@@ -574,6 +575,29 @@ class WhatsAppService {
 
       await this.reply(replyJid, successMsg);
       database.markNotified(appointment.id);
+
+      // Respaldo inmediato por WhatsApp al Administrador
+      if (CONFIG.ADMIN_PHONE) {
+        try {
+          const adminNotice =
+            `💾 *RESPALDO AUTOMÁTICO DE CITA - ALFACREDIT S.A.*\n` +
+            `══════════════════════════════\n` +
+            `👤 *Postulante:* ${appointment.candidate_name}\n` +
+            `📱 *Teléfono:* ${appointment.phone_number}\n` +
+            `💼 *Plaza:* ${appointment.position}\n` +
+            `📅 *Fecha:* ${scheduler.getDateLabel(appointment.date)}\n` +
+            `⏰ *Hora:* ${scheduler.formatTime12h(appointment.time_slot)}\n` +
+            `🆔 *ID Registro:* #${appointment.id}\n` +
+            `══════════════════════════════\n` +
+            `✅ *Copia guardada en el sistema de respaldo.*`;
+          await this.sendMessage(CONFIG.ADMIN_PHONE, adminNotice);
+        } catch (e) {
+          console.warn('[WhatsApp] Error enviando respaldo al administrador:', e.message);
+        }
+      }
+
+      // Sincronización automática a GitHub en segundo plano
+      backupManager.syncToGitHub(`nueva cita #${appointment.id} (${appointment.candidate_name})`).catch(() => {});
     } catch (err) {
       console.error('[WhatsApp] Error agendando cita:', err.message);
       await this.reply(replyJid, `⚠️ Ocurrió un inconveniente al registrar tu cita (${err.message}). Por favor responde con *"REINICIAR"* para volver a seleccionar tu turno.`);
