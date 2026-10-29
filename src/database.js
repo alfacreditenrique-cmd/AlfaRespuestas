@@ -9,6 +9,17 @@ if (!fs.existsSync(dbDir)) {
   fs.mkdirSync(dbDir, { recursive: true });
 }
 
+// Auto-seed: si la BD de destino no existe pero existe la del repositorio, copiarla para no perder citas
+const repoDbPath = path.join(__dirname, '..', 'data', 'alfa_citas.sqlite');
+if (path.resolve(CONFIG.DB_PATH) !== path.resolve(repoDbPath) && !fs.existsSync(CONFIG.DB_PATH) && fs.existsSync(repoDbPath)) {
+  try {
+    fs.copyFileSync(repoDbPath, CONFIG.DB_PATH);
+    console.log('✅ Base de datos sincronizada desde el repositorio a:', CONFIG.DB_PATH);
+  } catch (err) {
+    console.error('Error al sincronizar base de datos inicial:', err.message);
+  }
+}
+
 const db = new DatabaseSync(CONFIG.DB_PATH);
 
 // Configuración de performance y consistencia (WAL mode)

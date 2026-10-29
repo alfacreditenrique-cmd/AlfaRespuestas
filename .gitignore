@@ -1,6 +1,8 @@
 node_modules/
 dist/
 auth_info_baileys/
-data/*.sqlite*
+data/test*.sqlite*
+data/*.sqlite-shm
+data/*.sqlite-wal
 data/backups/
 *.log
