@@ -5,7 +5,7 @@ const dataDir = process.env.DATA_DIR || path.join(__dirname, '..', 'data');
 const CONFIG = {
   PORT: process.env.PORT || 3000,
   COMPANY_NAME: 'AlfaCredit S.A.',
-  LOCATION: 'Oficinas Principales AlfaCredit S.A., Edificio Central, Nivel 3',
+  LOCATION: 'COSTADO SUROESTE PARQUE CENTRAL 1/2 CUADRA AL OESTE, SEBACO',
   DATA_DIR: dataDir,
   DB_PATH: process.env.DB_PATH || path.join(dataDir, 'alfa_citas.sqlite'),
   AUTH_DIR: process.env.AUTH_DIR || (process.env.DATA_DIR ? path.join(dataDir, 'auth_info_baileys') : path.join(__dirname, '..', 'auth_info_baileys')),
