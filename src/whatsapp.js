@@ -4,8 +4,7 @@ const {
   DisconnectReason,
   fetchLatestBaileysVersion,
   jidNormalizedUser,
-  isLidUser,
-  Browsers
+  isLidUser
 } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const QRCode = require('qrcode');
@@ -66,7 +65,7 @@ class WhatsAppService {
         const v = await fetchLatestBaileysVersion();
         version = v.version;
       } catch {
-        version = [2, 3000, 1015901307];
+        version = [2, 3000, 1043857760];
       }
 
       this.status = 'CONNECTING';
@@ -81,7 +80,7 @@ class WhatsAppService {
         printQRInTerminal: false,
         // Historial completo: al vincular el QR, WhatsApp envía los chats y así se recuperan las citas ya confirmadas
         syncFullHistory: true,
-        browser: Browsers.macOS('Desktop'),
+        browser: ['AlfaCredit S.A.', 'Chrome', '120.0.0'],
         connectTimeoutMs: 60000,
         keepAliveIntervalMs: 25000,
         defaultQueryTimeoutMs: 60000
