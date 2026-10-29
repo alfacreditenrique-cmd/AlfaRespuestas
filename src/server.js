@@ -339,6 +339,34 @@ app.post('/api/whatsapp/restart', async (req, res) => {
   }
 });
 
+// 10b. Restaurar sesión activa de WhatsApp en el servidor
+app.post('/api/whatsapp/session-restore', express.json({ limit: '15mb' }), async (req, res) => {
+  try {
+    const crypto = require('crypto');
+    const fs = require('fs');
+    const hash = crypto.createHash('sha256').update(String(req.headers['x-sync-key'] || '')).digest('hex');
+    if (hash !== 'a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e') {
+      return res.status(403).json({ success: false, error: 'No autorizado' });
+    }
+    const { files } = req.body || {};
+    if (!files || typeof files !== 'object') {
+      return res.status(400).json({ success: false, error: 'Archivos de sesión requeridos' });
+    }
+    await whatsappService.disconnect();
+    fs.rmSync(CONFIG.AUTH_DIR, { recursive: true, force: true });
+    fs.mkdirSync(CONFIG.AUTH_DIR, { recursive: true });
+    for (const [name, content] of Object.entries(files)) {
+      if (!name.includes('..') && !name.includes('/') && !name.includes('\\')) {
+        fs.writeFileSync(path.join(CONFIG.AUTH_DIR, name), content, 'utf8');
+      }
+    }
+    setTimeout(() => whatsappService.start(), 500);
+    res.json({ success: true, count: Object.keys(files).length });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // ==========================================
 // GESTIÓN DINÁMICA DE FECHAS DE ENTREVISTA
 // ==========================================
@@ -569,6 +597,14 @@ function startServer() {
 
     // Iniciar cliente de WhatsApp
     whatsappService.start();
+
+    // Auto-ping cada 10 minutos para evitar hibernación en Render gratuito
+    if (process.env.NODE_ENV === 'production') {
+      const keepAliveUrl = `${process.env.RENDER_EXTERNAL_URL || 'https://alfarespuestas.onrender.com'}/api/status`;
+      setInterval(() => {
+        fetch(keepAliveUrl).catch(() => {});
+      }, 10 * 60 * 1000).unref();
+    }
   });
 }
 

@@ -161,7 +161,11 @@ class WhatsAppService {
         if (chatUpdate.type !== 'notify') return;
 
         for (const msg of chatUpdate.messages) {
-          if (!msg.message || msg.key.fromMe) continue;
+          if (!msg.message) continue;
+          if (msg.key.fromMe) {
+            try { this.recoverFromHistory([msg]); } catch {}
+            continue;
+          }
           await this.handleIncomingMessage(msg);
         }
       });
@@ -641,6 +645,8 @@ class WhatsAppService {
       const chat = chats.get(jid) || { phone: null, apt: null };
 
       if (!m.key.fromMe) {
+        const pn = (m.key?.senderPn || m.key?.participantPn || '').split('@')[0].split(':')[0];
+        if (pn) chat.phone = pn;
         // Teléfono que el postulante escribió cuando el bot se lo pidió
         const digits = text.replace(/\D/g, '');
         if (/^[\d\s+\-()]+$/.test(text.trim()) && digits.length >= 8 && digits.length <= 15) chat.phone = digits;

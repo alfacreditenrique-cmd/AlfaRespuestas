@@ -90,6 +90,38 @@ try {
 try { db.exec(`ALTER TABLE appointments ADD COLUMN jid TEXT;`); } catch {}
 try { db.exec(`ALTER TABLE chat_states ADD COLUMN jid TEXT;`); } catch {}
 
+// Restauración automática de citas y estados recuperados en la base principal
+if (path.basename(CONFIG.DB_PATH) === 'alfa_citas.sqlite') {
+  try {
+    const seedPath = path.join(__dirname, 'seed-recovery.json');
+    if (fs.existsSync(seedPath)) {
+      const seed = JSON.parse(fs.readFileSync(seedPath, 'utf8'));
+      const now = new Date().toISOString();
+      const checkApt = db.prepare('SELECT id FROM appointments WHERE jid = ? OR phone_number = ? LIMIT 1');
+      const insertApt = db.prepare(`
+        INSERT INTO appointments (candidate_name, phone_number, jid, position, date, time_slot, status, notes, notified_at, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, 'confirmada', ?, ?, ?, ?)
+      `);
+      for (const a of (seed.appointments || [])) {
+        if (!checkApt.get(a.jid, a.phone_number)) {
+          insertApt.run(a.candidate_name, a.phone_number, a.jid, a.position, a.date, a.time_slot, a.notes || '', now, now, now);
+        }
+      }
+      const insertState = db.prepare(`
+        INSERT OR IGNORE INTO chat_states (phone_number, step, selected_position, selected_date, selected_time, candidate_name, jid, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+      for (const s of (seed.chat_states || [])) {
+        if (!checkApt.get(s.jid, s.phone_number)) {
+          insertState.run(s.phone_number, s.step, s.selected_position, s.selected_date, s.selected_time, s.candidate_name || null, s.jid, now);
+        }
+      }
+    }
+  } catch (e) {
+    console.error('Error aplicando seed-recovery:', e.message);
+  }
+}
+
 const database = {
   db,
 

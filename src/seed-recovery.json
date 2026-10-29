@@ -1,0 +1,305 @@
+{
+  "appointments": [
+    {
+      "candidate_name": "Enrique Castillo",
+      "phone_number": "50575534505",
+      "jid": "50930124898441@lid",
+      "position": "Oficial de Crédito",
+      "date": "2025-11-04",
+      "time_slot": "08:30",
+      "notes": "Agendado automáticamente vía WhatsApp bot"
+    },
+    {
+      "candidate_name": "Postulante Confirmado (ID 106674740297844)",
+      "phone_number": "106674740297844",
+      "jid": "106674740297844@lid",
+      "position": "Oficial de Crédito",
+      "date": "2025-11-04",
+      "time_slot": "08:45",
+      "notes": "Turno 08:45 AM reservado y recuperado desde sesión WhatsApp"
+    },
+    {
+      "candidate_name": "Postulante Confirmado (ID 45222197215415)",
+      "phone_number": "45222197215415",
+      "jid": "45222197215415@lid",
+      "position": "Oficial de Crédito",
+      "date": "2025-11-04",
+      "time_slot": "09:00",
+      "notes": "Turno 09:00 AM reservado y recuperado desde sesión WhatsApp"
+    },
+    {
+      "candidate_name": "Jiuver Alexander García Chavarría",
+      "phone_number": "180423288217602",
+      "jid": "180423288217602@lid",
+      "position": "Desembolsador de Crédito",
+      "date": "2025-11-04",
+      "time_slot": "09:15",
+      "notes": "Recuperada del historial de WhatsApp"
+    },
+    {
+      "candidate_name": "Winston Porfirio Meza Martínez",
+      "phone_number": "118069288509644",
+      "jid": "118069288509644@lid",
+      "position": "Oficial de Crédito",
+      "date": "2025-11-04",
+      "time_slot": "09:30",
+      "notes": "Recuperada del historial de WhatsApp"
+    },
+    {
+      "candidate_name": "Jose Manuel Garcia",
+      "phone_number": "101473316769843",
+      "jid": "101473316769843@lid",
+      "position": "Oficial de Crédito",
+      "date": "2025-11-04",
+      "time_slot": "09:45",
+      "notes": "Recuperada del historial de WhatsApp"
+    },
+    {
+      "candidate_name": "Lidia del Rosario Velasquez Padilla",
+      "phone_number": "9651412328582",
+      "jid": "9651412328582@lid",
+      "position": "Desembolsador de Crédito",
+      "date": "2025-11-04",
+      "time_slot": "10:00",
+      "notes": "Recuperada del historial de WhatsApp"
+    },
+    {
+      "candidate_name": "Rafael Conrado Moreno",
+      "phone_number": "50582950033",
+      "jid": "110582757892269@lid",
+      "position": "Oficial de Crédito",
+      "date": "2025-11-04",
+      "time_slot": "10:15",
+      "notes": "Recuperada del historial de WhatsApp"
+    },
+    {
+      "candidate_name": "Jairo Rappaccioli Martinez",
+      "phone_number": "50582056966",
+      "jid": "33105826062589@lid",
+      "position": "Oficial de Crédito",
+      "date": "2025-11-04",
+      "time_slot": "10:30",
+      "notes": "Recuperada del historial de WhatsApp"
+    },
+    {
+      "candidate_name": "Francisco Rodríguez",
+      "phone_number": "50584130501",
+      "jid": "160095442850025@lid",
+      "position": "Desembolsador de Crédito",
+      "date": "2025-11-04",
+      "time_slot": "10:45",
+      "notes": "Recuperada del historial de WhatsApp"
+    },
+    {
+      "candidate_name": "Cristhopper Tyrone Mercado Pilarte",
+      "phone_number": "50578007038",
+      "jid": "21530956296243@lid",
+      "position": "Oficial de Crédito",
+      "date": "2025-11-04",
+      "time_slot": "11:00",
+      "notes": "Recuperada del historial de WhatsApp"
+    },
+    {
+      "candidate_name": "Luis Carlos Delgado Rayo",
+      "phone_number": "50557376270",
+      "jid": "44101378519253@lid",
+      "position": "Promotor de Crédito",
+      "date": "2025-11-04",
+      "time_slot": "11:15",
+      "notes": "Recuperada del historial de WhatsApp"
+    },
+    {
+      "candidate_name": "Nelson Alexander Meza Hernández",
+      "phone_number": "50582871492",
+      "jid": "90259157213350@lid",
+      "position": "Promotor de Crédito",
+      "date": "2025-11-04",
+      "time_slot": "11:30",
+      "notes": "Recuperada del historial de WhatsApp"
+    },
+    {
+      "candidate_name": "Alejandra José González Palacios",
+      "phone_number": "50588370405",
+      "jid": "161435455905909@lid",
+      "position": "Oficial de Crédito",
+      "date": "2025-11-04",
+      "time_slot": "11:45",
+      "notes": "Recuperada del historial de WhatsApp"
+    },
+    {
+      "candidate_name": "Dania Maradiaga Martinez",
+      "phone_number": "50558405580",
+      "jid": "254168094789736@lid",
+      "position": "Oficial de Crédito",
+      "date": "2025-11-04",
+      "time_slot": "12:00",
+      "notes": "Recuperada del historial de WhatsApp"
+    },
+    {
+      "candidate_name": "Postulante Confirmado (ID 101485933240503)",
+      "phone_number": "101485933240503",
+      "jid": "101485933240503@lid",
+      "position": "Oficial de Crédito",
+      "date": "2025-11-05",
+      "time_slot": "08:30",
+      "notes": "Turno 08:30 AM reservado y recuperado desde sesión WhatsApp"
+    },
+    {
+      "candidate_name": "Elis Similex Rosales Paez",
+      "phone_number": "211033302011952",
+      "jid": "211033302011952@lid",
+      "position": "Desembolsador de Crédito",
+      "date": "2025-11-05",
+      "time_slot": "08:45",
+      "notes": "Recuperada del historial de WhatsApp"
+    },
+    {
+      "candidate_name": "Maríaneia Morales Pérez",
+      "phone_number": "204376538906847",
+      "jid": "204376538906847@lid",
+      "position": "Promotor de Crédito",
+      "date": "2025-11-05",
+      "time_slot": "09:00",
+      "notes": "Recuperada del historial de WhatsApp"
+    },
+    {
+      "candidate_name": "Asbell Eleazar Martínez Alarcón",
+      "phone_number": "50588311675",
+      "jid": "84658435919913@lid",
+      "position": "Promotor de Crédito",
+      "date": "2025-11-05",
+      "time_slot": "09:15",
+      "notes": "Recuperada del historial de WhatsApp"
+    }
+  ],
+  "chat_states": [
+    {
+      "phone_number": "278490125480035",
+      "step": "AWAITING_NAME",
+      "selected_position": "Oficial de Crédito",
+      "selected_date": "2025-11-04",
+      "selected_time": "11:15",
+      "jid": "278490125480035@lid"
+    },
+    {
+      "phone_number": "21179188416627",
+      "step": "AWAITING_DATE",
+      "selected_position": "Promotor de Crédito",
+      "selected_date": null,
+      "selected_time": null,
+      "jid": "21179188416627@lid"
+    },
+    {
+      "phone_number": "40497330532540",
+      "step": "AWAITING_DATE",
+      "selected_position": "Promotor de Crédito",
+      "selected_date": null,
+      "selected_time": null,
+      "jid": "40497330532540@lid"
+    },
+    {
+      "phone_number": "231185875738830",
+      "step": "AWAITING_DATE",
+      "selected_position": "Promotor de Crédito",
+      "selected_date": null,
+      "selected_time": null,
+      "jid": "231185875738830@lid"
+    },
+    {
+      "phone_number": "74062869045435",
+      "step": "AWAITING_DATE",
+      "selected_position": "Oficial de Crédito",
+      "selected_date": null,
+      "selected_time": null,
+      "jid": "74062869045435@lid"
+    },
+    {
+      "phone_number": "87424344531017",
+      "step": "AWAITING_POSITION",
+      "selected_position": null,
+      "selected_date": null,
+      "selected_time": null,
+      "jid": "87424344531017@lid"
+    },
+    {
+      "phone_number": "239410167689333",
+      "step": "AWAITING_POSITION",
+      "selected_position": null,
+      "selected_date": null,
+      "selected_time": null,
+      "jid": "239410167689333@lid"
+    },
+    {
+      "phone_number": "181609101840435",
+      "step": "AWAITING_POSITION",
+      "selected_position": null,
+      "selected_date": null,
+      "selected_time": null,
+      "jid": "181609101840435@lid"
+    },
+    {
+      "phone_number": "142958758232232",
+      "step": "AWAITING_POSITION",
+      "selected_position": null,
+      "selected_date": null,
+      "selected_time": null,
+      "jid": "142958758232232@lid"
+    },
+    {
+      "phone_number": "143954418864316",
+      "step": "AWAITING_POSITION",
+      "selected_position": null,
+      "selected_date": null,
+      "selected_time": null,
+      "jid": "143954418864316@lid"
+    },
+    {
+      "phone_number": "120057271185433",
+      "step": "AWAITING_POSITION",
+      "selected_position": null,
+      "selected_date": null,
+      "selected_time": null,
+      "jid": "120057271185433@lid"
+    },
+    {
+      "phone_number": "131791088279582",
+      "step": "AWAITING_POSITION",
+      "selected_position": null,
+      "selected_date": null,
+      "selected_time": null,
+      "jid": "131791088279582@lid"
+    },
+    {
+      "phone_number": "92238717669440",
+      "step": "AWAITING_POSITION",
+      "selected_position": null,
+      "selected_date": null,
+      "selected_time": null,
+      "jid": "92238717669440@lid"
+    },
+    {
+      "phone_number": "217184282357871",
+      "step": "AWAITING_POSITION",
+      "selected_position": null,
+      "selected_date": null,
+      "selected_time": null,
+      "jid": "217184282357871@lid"
+    },
+    {
+      "phone_number": "78971597271125",
+      "step": "AWAITING_POSITION",
+      "selected_position": null,
+      "selected_date": null,
+      "selected_time": null,
+      "jid": "78971597271125@lid"
+    },
+    {
+      "phone_number": "57256796233770",
+      "step": "AWAITING_POSITION",
+      "selected_position": null,
+      "selected_date": null,
+      "selected_time": null,
+      "jid": "57256796233770@lid"
+    }
+  ]
+}
