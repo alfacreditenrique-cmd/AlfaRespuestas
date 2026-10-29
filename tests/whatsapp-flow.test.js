@@ -757,3 +757,96 @@ test('WhatsApp Flow R1 & R2: Candidato con cita existente que consulta sobre cr�
   assert.equal(aptCheck.candidate_name, 'Daniela Kassandra Molina');
   assert.equal(aptCheck.position, 'Promotor de Crédito');
 });
+
+test('WhatsApp Anti-Ban: Ignora ráfagas de mensajes idénticos repetidos y respeta Modo Pausa', async () => {
+  const fromJid = '50581112233@s.whatsapp.net';
+
+  // 1. Modo Pausa detiene respuestas automáticas
+  whatsappService.paused = true;
+  await whatsappService.handleIncomingMessage({
+    key: { remoteJid: fromJid, fromMe: false },
+    message: { conversation: 'Hola' }
+  });
+  assert.equal(sentReplies.length, 0, 'No debe responder mientras está en Modo Pausa');
+  whatsappService.paused = false;
+
+  // 2. Deduplicación de ráfagas cuando hay socket activo
+  whatsappService.sock = {}; // Simular socket activo para activar filtro anti-ráfaga
+  try {
+    await whatsappService.handleIncomingMessage({
+      key: { remoteJid: fromJid, fromMe: false },
+      message: { conversation: 'Hola' }
+    });
+    await whatsappService.handleIncomingMessage({
+      key: { remoteJid: fromJid, fromMe: false },
+      message: { conversation: 'hola' }
+    });
+    assert.equal(sentReplies.length, 1, 'Solo debe responder una vez ante mensajes idénticos en ráfaga');
+  } finally {
+    whatsappService.sock = null;
+    whatsappService.recentIncoming.clear();
+  }
+
+  // 3. Limpieza de reconnectTimer al desconectar o pausar (evita reconexión fantasma duplicada)
+  whatsappService.reconnect();
+  assert.equal(whatsappService.isReconnecting, true);
+  assert.ok(whatsappService.reconnectTimer, 'Debe existir un timer de reconexión activo');
+  await whatsappService.disconnect();
+  assert.equal(whatsappService.isReconnecting, false);
+  assert.equal(whatsappService.reconnectTimer, null, 'disconnect() debe cancelar cualquier timer pendiente');
+});
+
+test('WhatsApp Concurrencia: Colisión en el último turno del día entre Portal Web y Bot', async () => {
+  // Ocupar los primeros 29 turnos del 2025-11-04 (dejando solo 17:00 y 17:15 libres)
+  for (let i = 0; i < CONFIG.TIME_SLOTS.length - 2; i++) {
+    database.createAppointment({
+      candidate_name: `Candidato Previo ${i + 1}`,
+      phone_number: `5058100${String(i + 1).padStart(4, '0')}`,
+      position: 'Oficial de Crédito',
+      date: '2025-11-04',
+      time_slot: CONFIG.TIME_SLOTS[i]
+    });
+  }
+
+  const botJid = '50589990001@s.whatsapp.net';
+  // Candidato A entra por el bot y reserva provisionalmente las 17:00
+  await whatsappService.handleIncomingMessage({
+    key: { remoteJid: botJid, fromMe: false, id: 'MSG-A1' },
+    message: { conversation: 'Hola' }
+  });
+  await whatsappService.handleIncomingMessage({
+    key: { remoteJid: botJid, fromMe: false, id: 'MSG-A2' },
+    message: { conversation: '1' }
+  });
+  await whatsappService.handleIncomingMessage({
+    key: { remoteJid: botJid, fromMe: false, id: 'MSG-A3' },
+    message: { conversation: '1' }
+  });
+
+  const stateBefore = database.getChatState('50589990001');
+  assert.equal(stateBefore.selected_time, '17:00');
+  assert.equal(whatsappService.lastMsgKeys.get(botJid)?.id, 'MSG-A3', 'Debe almacenar lastMsgKey aislado por JID');
+
+  // Mientras Candidato A escribe su nombre, Candidato B toma las 17:00 desde el portal web
+  database.createAppointment({
+    candidate_name: 'Candidato Web Simultáneo',
+    phone_number: '50589990002',
+    position: 'Promotor de Crédito',
+    date: '2025-11-04',
+    time_slot: '17:00'
+  });
+
+  // Candidato A envía su nombre -> el bot detecta colisión en 17:00 y le asigna automáticamente el último turno (17:15)
+  await whatsappService.handleIncomingMessage({
+    key: { remoteJid: botJid, fromMe: false, id: 'MSG-A4' },
+    message: { conversation: 'Roberto Carlos Estrada' }
+  });
+
+  const aptA = database.getAppointmentByPhone('50589990001');
+  assert.ok(aptA, 'El candidato del bot debe quedar agendado');
+  assert.equal(aptA.time_slot, '17:15', 'Debe habérsele reasignado el último turno disponible (17:15)');
+  const lastReply = sentReplies[sentReplies.length - 1].text;
+  assert.ok(lastReply.includes('05:15 PM'), 'El ticket debe reflejar el nuevo horario 05:15 PM');
+});
+
+

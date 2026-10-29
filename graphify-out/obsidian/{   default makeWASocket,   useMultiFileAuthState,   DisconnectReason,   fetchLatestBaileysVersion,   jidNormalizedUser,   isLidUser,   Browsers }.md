@@ -1,0 +1,25 @@
+---
+source_file: "whatsapp.js"
+type: "code"
+community: "Baileys Socket & Session Auth"
+location: "L1"
+tags:
+  - graphify/code
+  - graphify/EXTRACTED
+  - community/Baileys_Socket__Session_Auth
+---
+
+# {
+  default: makeWASocket,
+  useMultiFileAuthState,
+  DisconnectReason,
+  fetchLatestBaileysVersion,
+  jidNormalizedUser,
+  isLidUser,
+  Browsers
+}
+
+## Connections
+- [[whatsapp.js]] - `contains` [EXTRACTED]
+
+#graphify/code #graphify/EXTRACTED #community/Baileys_Socket__Session_Auth

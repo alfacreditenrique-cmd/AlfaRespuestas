@@ -116,11 +116,20 @@ app.get('/api/slots', (req, res) => {
 // Helper para normalizar citas (garantiza que phone_number siempre sea un teléfono real y no un @lid)
 function normalizeAppointment(apt) {
   if (!apt) return null;
+  const resolvedPhone = typeof database.resolvePhoneNumber === 'function'
+    ? database.resolvePhoneNumber(apt.phone_number, apt.jid)
+    : apt.phone_number;
+  const digits = CONFIG.normalizePhone(resolvedPhone);
+  const ticketMsg = apt.status === 'cancelada' || apt.status === 'reprogramada'
+    ? scheduler.generateRescheduledNotice({ ...apt, phone_number: resolvedPhone })
+    : `🎉 *¡SU ENTREVISTA ESTÁ CONFIRMADA EN ALFACREDIT S.A.!*\n\n` + scheduler.generateTicket({ ...apt, phone_number: resolvedPhone });
+  const wa_link = digits && digits.length >= 8 && digits.length <= 12
+    ? `https://wa.me/${digits}?text=${encodeURIComponent(ticketMsg)}`
+    : null;
   return {
     ...apt,
-    phone_number: typeof database.resolvePhoneNumber === 'function'
-      ? database.resolvePhoneNumber(apt.phone_number, apt.jid)
-      : apt.phone_number
+    phone_number: resolvedPhone,
+    wa_link
   };
 }
 
@@ -359,6 +368,9 @@ app.post('/api/whatsapp/notify/:id', async (req, res) => {
 // 10. Reiniciar servicio de WhatsApp o desvincular
 app.post('/api/whatsapp/restart', async (req, res) => {
   try {
+    whatsappService.paused = false;
+    whatsappService.reconnectAttempts = 0;
+    whatsappService.lastDisconnectReason = null;
     await whatsappService.disconnect();
     setTimeout(() => {
       whatsappService.start();
@@ -369,7 +381,40 @@ app.post('/api/whatsapp/restart', async (req, res) => {
   }
 });
 
-// 10b. Restaurar sesión activa de WhatsApp en el servidor
+// 10a. Pausar o Reanudar Bot de WhatsApp (Modo Seguro Anti-Bloqueo)
+app.post('/api/whatsapp/pause', async (req, res) => {
+  try {
+    const { paused = true } = req.body || {};
+    const status = await whatsappService.setPaused(Boolean(paused));
+    res.json({
+      success: true,
+      paused: status.paused,
+      whatsapp: status,
+      message: status.paused
+        ? 'Bot de WhatsApp en pausa (Modo Seguro Anti-Bloqueo).'
+        : 'Bot de WhatsApp reanudado.'
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 10b. Solicitar código de vinculación de 8 dígitos por número telefónico (Pairing Code)
+app.post('/api/whatsapp/pairing-code', async (req, res) => {
+  try {
+    const { phone_number, phoneNumber } = req.body || {};
+    const code = await whatsappService.requestPairingCode(phone_number || phoneNumber);
+    res.json({
+      success: true,
+      pairingCode: code,
+      message: `Código generado: ${code}. Ingresa en tu WhatsApp > Dispositivos vinculados > Vincular con el número de teléfono.`
+    });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// 10c. Restaurar sesión activa de WhatsApp en el servidor
 app.post('/api/whatsapp/session-restore', express.json({ limit: '15mb' }), async (req, res) => {
   try {
     const crypto = require('crypto');
@@ -394,6 +439,87 @@ app.post('/api/whatsapp/session-restore', express.json({ limit: '15mb' }), async
     res.json({ success: true, count: Object.keys(files).length });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 10d. Portal Web Público de Auto-Agendamiento para Postulantes (Plan B 0% riesgo de bloqueo de WhatsApp)
+app.post('/api/public/agendar', async (req, res) => {
+  try {
+    const { candidate_name, phone_number, position, date } = req.body || {};
+    const nameClean = String(candidate_name || '').trim();
+    const phoneDigits = String(phone_number || '').replace(/[^0-9]/g, '');
+
+    if (!whatsappService.isValidCandidateName(nameClean)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Por favor ingresa tu Nombre y Apellido completo (ej: Carlos Roberto Mendoza).'
+      });
+    }
+    if (phoneDigits.length < 8 || phoneDigits.length > 15) {
+      return res.status(400).json({
+        success: false,
+        error: 'Por favor ingresa un número de teléfono o WhatsApp válido de al menos 8 dígitos.'
+      });
+    }
+
+    const posObj = scheduler.resolvePosition(position) || CONFIG.POSITIONS.find(p => p.title === String(position || '').trim());
+    if (!posObj) {
+      return res.status(400).json({
+        success: false,
+        error: 'Por favor selecciona una plaza válida.'
+      });
+    }
+
+    const dateObj = scheduler.resolveDate(date);
+    if (!dateObj) {
+      return res.status(400).json({
+        success: false,
+        error: 'Por favor selecciona una fecha de entrevista disponible.'
+      });
+    }
+
+    const prior = database.getAppointmentByPhone(phoneDigits);
+    let nextSlot = scheduler.getNextAvailableSlot(dateObj.id);
+    if (!nextSlot && (!prior || prior.date !== dateObj.id)) {
+      return res.status(409).json({
+        success: false,
+        error: `Lo sentimos, los cupos para el ${dateObj.label} se han agotado. Por favor elige otra fecha disponible.`
+      });
+    }
+
+    // Si ya tenía una cita previa activa con ese teléfono, liberarla antes de asignar el nuevo turno
+    if (prior) {
+      database.cancelAppointment(prior.id, 'Reprogramada por el postulante desde portal web /agendar');
+      if (prior.date === dateObj.id) {
+        nextSlot = scheduler.getNextAvailableSlot(dateObj.id) || prior.time_slot;
+      }
+    }
+
+    const appointment = database.createAppointment({
+      candidate_name: nameClean,
+      phone_number: phoneDigits,
+      position: posObj.title,
+      date: dateObj.id,
+      time_slot: nextSlot,
+      notes: prior ? `Reprogramada vía Portal Web (/agendar) desde cita #${prior.id}` : 'Agendado por el postulante vía Portal Web (/agendar)'
+    });
+
+    const ticket = scheduler.generateTicket(appointment);
+    const normalized = normalizeAppointment(appointment);
+
+    broadcast('new_appointment', normalized);
+    broadcast('stats_updated', database.getStats());
+
+    res.status(201).json({
+      success: true,
+      appointment: normalized,
+      ticket,
+      dateLabel: scheduler.getDateLabel(appointment.date),
+      time12h: scheduler.formatTime12h(appointment.time_slot),
+      location: CONFIG.LOCATION
+    });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
   }
 });
 
@@ -604,6 +730,11 @@ app.get('/api/export/excel', async (req, res) => {
     console.error('Error generando archivo Excel:', err);
     res.status(500).json({ success: false, error: err.message });
   }
+});
+
+// Portal público de auto-agendamiento de entrevistas (Plan B sin riesgo de bloqueo de WhatsApp)
+app.get('/agendar', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'agendar.html'));
 });
 
 // Fallback al index.html para la SPA

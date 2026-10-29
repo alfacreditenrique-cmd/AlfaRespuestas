@@ -1,0 +1,2342 @@
+{
+  "nodes": [
+    {
+      "id": "g0",
+      "type": "group",
+      "label": "WhatsApp Anti-Ban & Pairing Engine",
+      "x": 0,
+      "y": 0,
+      "width": 1100,
+      "height": 620,
+      "color": "1"
+    },
+    {
+      "id": "n_whatsapp_whatsappservice_constructor",
+      "type": "file",
+      "file": "dot-constructor().md",
+      "x": 20,
+      "y": 80,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_whatsapp_whatsappservice_disconnect",
+      "type": "file",
+      "file": "dot-disconnect().md",
+      "x": 220,
+      "y": 80,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_whatsapp_whatsappservice_emitevent",
+      "type": "file",
+      "file": "dot-emitEvent().md",
+      "x": 420,
+      "y": 80,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_whatsapp_whatsappservice_enqueuesend",
+      "type": "file",
+      "file": "dot-enqueueSend().md",
+      "x": 620,
+      "y": 80,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_whatsapp_whatsappservice_finalizeappointment",
+      "type": "file",
+      "file": "dot-finalizeAppointment().md",
+      "x": 820,
+      "y": 80,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_whatsapp_whatsappservice_getdatesprompt",
+      "type": "file",
+      "file": "dot-getDatesPrompt().md",
+      "x": 20,
+      "y": 160,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_whatsapp_whatsappservice_getpositionsprompt",
+      "type": "file",
+      "file": "dot-getPositionsPrompt().md",
+      "x": 220,
+      "y": 160,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_whatsapp_whatsappservice_getstatus",
+      "type": "file",
+      "file": "dot-getStatus().md",
+      "x": 420,
+      "y": 160,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_whatsapp_whatsappservice_handleincomingmessage",
+      "type": "file",
+      "file": "dot-handleIncomingMessage().md",
+      "x": 620,
+      "y": 160,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_whatsapp_whatsappservice_isvalidcandidatename",
+      "type": "file",
+      "file": "dot-isValidCandidateName().md",
+      "x": 820,
+      "y": 160,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_whatsapp_whatsappservice_onevent",
+      "type": "file",
+      "file": "dot-onEvent().md",
+      "x": 20,
+      "y": 240,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_whatsapp_whatsappservice_reconnect",
+      "type": "file",
+      "file": "dot-reconnect().md",
+      "x": 220,
+      "y": 240,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_whatsapp_whatsappservice_recoverfromhistory",
+      "type": "file",
+      "file": "dot-recoverFromHistory().md",
+      "x": 420,
+      "y": 240,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_whatsapp_whatsappservice_reply",
+      "type": "file",
+      "file": "dot-reply().md",
+      "x": 620,
+      "y": 240,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_whatsapp_whatsappservice_requestpairingcode",
+      "type": "file",
+      "file": "dot-requestPairingCode().md",
+      "x": 820,
+      "y": 240,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_whatsapp_whatsappservice_resolvedatelabel",
+      "type": "file",
+      "file": "dot-resolveDateLabel().md",
+      "x": 20,
+      "y": 320,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_whatsapp_whatsappservice_sendmessage",
+      "type": "file",
+      "file": "dot-sendMessage().md",
+      "x": 220,
+      "y": 320,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_whatsapp_whatsappservice_setpaused",
+      "type": "file",
+      "file": "dot-setPaused().md",
+      "x": 420,
+      "y": 320,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_whatsapp_whatsappservice_simulatehumantyping",
+      "type": "file",
+      "file": "dot-simulateHumanTyping().md",
+      "x": 620,
+      "y": 320,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_whatsapp_whatsappservice_start",
+      "type": "file",
+      "file": "dot-start().md",
+      "x": 820,
+      "y": 320,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_antiban_shield",
+      "type": "file",
+      "file": "Escudo Anti-Bloqueo (Anti-Ban).md",
+      "x": 20,
+      "y": 400,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_conflict_440_guard",
+      "type": "file",
+      "file": "Protector Guerra de Sesiones (Codigo 440403).md",
+      "x": 220,
+      "y": 400,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_pairing_code_auth",
+      "type": "file",
+      "file": "Vinculacion Codigo 8 Digitos (Pairing Code).md",
+      "x": 420,
+      "y": 400,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_whatsapp_whatsappservice",
+      "type": "file",
+      "file": "WhatsAppService.md",
+      "x": 620,
+      "y": 400,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "g1",
+      "type": "group",
+      "label": "Express REST API & Public Booking",
+      "x": 1180,
+      "y": 0,
+      "width": 1100,
+      "height": 620,
+      "color": "2"
+    },
+    {
+      "id": "n_server_config",
+      "type": "file",
+      "file": "CONFIG.md",
+      "x": 1200,
+      "y": 80,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_server_exceljs",
+      "type": "file",
+      "file": "ExcelJS.md",
+      "x": 1400,
+      "y": 80,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_public_booking_portal",
+      "type": "file",
+      "file": "Portal Web Auto-Agendamiento (agendar).md",
+      "x": 1600,
+      "y": 80,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_server_websocket",
+      "type": "file",
+      "file": "WebSocket.md",
+      "x": 1800,
+      "y": 80,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_server_app",
+      "type": "file",
+      "file": "app.md",
+      "x": 2000,
+      "y": 80,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_server_broadcast",
+      "type": "file",
+      "file": "broadcast().md",
+      "x": 1200,
+      "y": 160,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_server_cors",
+      "type": "file",
+      "file": "cors.md",
+      "x": 1400,
+      "y": 160,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_server_database",
+      "type": "file",
+      "file": "database.md",
+      "x": 1600,
+      "y": 160,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_server_express",
+      "type": "file",
+      "file": "express.md",
+      "x": 1800,
+      "y": 160,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_server_http",
+      "type": "file",
+      "file": "http.md",
+      "x": 2000,
+      "y": 160,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_server_normalizeappointment",
+      "type": "file",
+      "file": "normalizeAppointment().md",
+      "x": 1200,
+      "y": 240,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_server_path",
+      "type": "file",
+      "file": "path.md",
+      "x": 1400,
+      "y": 240,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_ref_cors",
+      "type": "file",
+      "file": "ref_cors.md",
+      "x": 1600,
+      "y": 240,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_ref_crypto",
+      "type": "file",
+      "file": "ref_crypto.md",
+      "x": 1800,
+      "y": 240,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_ref_exceljs",
+      "type": "file",
+      "file": "ref_exceljs.md",
+      "x": 2000,
+      "y": 240,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_ref_express",
+      "type": "file",
+      "file": "ref_express.md",
+      "x": 1200,
+      "y": 320,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_ref_http",
+      "type": "file",
+      "file": "ref_http.md",
+      "x": 1400,
+      "y": 320,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_ref_ws",
+      "type": "file",
+      "file": "ref_ws.md",
+      "x": 1600,
+      "y": 320,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_server_scheduler",
+      "type": "file",
+      "file": "scheduler.md",
+      "x": 1800,
+      "y": 320,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_server_server",
+      "type": "file",
+      "file": "server.md",
+      "x": 2000,
+      "y": 320,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_server",
+      "type": "file",
+      "file": "server.js.md",
+      "x": 1200,
+      "y": 400,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_server_startserver",
+      "type": "file",
+      "file": "startServer().md",
+      "x": 1400,
+      "y": 400,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_server_whatsappservice",
+      "type": "file",
+      "file": "whatsappService_1.md",
+      "x": 1600,
+      "y": 400,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_server_wss",
+      "type": "file",
+      "file": "wss.md",
+      "x": 1800,
+      "y": 400,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "g2",
+      "type": "group",
+      "label": "Baileys Socket & Session Auth",
+      "x": 2360,
+      "y": 0,
+      "width": 880,
+      "height": 520,
+      "color": "3"
+    },
+    {
+      "id": "n_whatsapp_config",
+      "type": "file",
+      "file": "CONFIG_1.md",
+      "x": 2380,
+      "y": 80,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_whatsapp_months_es",
+      "type": "file",
+      "file": "MONTHS_ES.md",
+      "x": 2580,
+      "y": 80,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_whatsapp_qrcode",
+      "type": "file",
+      "file": "QRCode.md",
+      "x": 2780,
+      "y": 80,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_whatsapp_database",
+      "type": "file",
+      "file": "database_1.md",
+      "x": 2980,
+      "y": 80,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_whatsapp_fs",
+      "type": "file",
+      "file": "fs.md",
+      "x": 2380,
+      "y": 160,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_whatsapp_path",
+      "type": "file",
+      "file": "path_1.md",
+      "x": 2580,
+      "y": 160,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_whatsapp_pino",
+      "type": "file",
+      "file": "pino.md",
+      "x": 2780,
+      "y": 160,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_ref_pino",
+      "type": "file",
+      "file": "ref_pino.md",
+      "x": 2980,
+      "y": 160,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_ref_qrcode",
+      "type": "file",
+      "file": "ref_qrcode.md",
+      "x": 2380,
+      "y": 240,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_ref_whiskeysockets_baileys",
+      "type": "file",
+      "file": "ref_whiskeysockets_baileys.md",
+      "x": 2580,
+      "y": 240,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_whatsapp_scheduler",
+      "type": "file",
+      "file": "scheduler_1.md",
+      "x": 2780,
+      "y": 240,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_whatsapp",
+      "type": "file",
+      "file": "whatsapp.js.md",
+      "x": 2980,
+      "y": 240,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_whatsapp_default_makewasocket_usemultifileauthstate_disconnectreason_fetchlatestbaileysversion_jidnormalizeduser_isliduser_browsers",
+      "type": "file",
+      "file": "{   default makeWASocket,   useMultiFileAuthState,   DisconnectReason,   fetchLatestBaileysVersion,   jidNormalizedUser,   isLidUser,   Browsers }.md",
+      "x": 2380,
+      "y": 320,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "g3",
+      "type": "group",
+      "label": "SQLite Database & LID Phone Mapping",
+      "x": 3320,
+      "y": 0,
+      "width": 880,
+      "height": 420,
+      "color": "4"
+    },
+    {
+      "id": "n_database_config",
+      "type": "file",
+      "file": "CONFIG_2.md",
+      "x": 3340,
+      "y": 80,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_database_known_lid_phone_mappings",
+      "type": "file",
+      "file": "KNOWN_LID_PHONE_MAPPINGS.md",
+      "x": 3540,
+      "y": 80,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_database_database",
+      "type": "file",
+      "file": "database_2.md",
+      "x": 3740,
+      "y": 80,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_database",
+      "type": "file",
+      "file": "database.js.md",
+      "x": 3940,
+      "y": 80,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_database_db",
+      "type": "file",
+      "file": "db.md",
+      "x": 3340,
+      "y": 160,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_database_dbdir",
+      "type": "file",
+      "file": "dbDir.md",
+      "x": 3540,
+      "y": 160,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_database_fs",
+      "type": "file",
+      "file": "fs_1.md",
+      "x": 3740,
+      "y": 160,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_database_path",
+      "type": "file",
+      "file": "path_2.md",
+      "x": 3940,
+      "y": 160,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_ref_fs",
+      "type": "file",
+      "file": "ref_fs.md",
+      "x": 3340,
+      "y": 240,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_ref_node_sqlite",
+      "type": "file",
+      "file": "ref_node_sqlite.md",
+      "x": 3540,
+      "y": 240,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_database_syncfromseedrecovery",
+      "type": "file",
+      "file": "syncFromSeedRecovery().md",
+      "x": 3740,
+      "y": 240,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_database_databasesync",
+      "type": "file",
+      "file": "{ DatabaseSync }.md",
+      "x": 3940,
+      "y": 240,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "g4",
+      "type": "group",
+      "label": "Appointment Modals & Slot Picker",
+      "x": 0,
+      "y": 700,
+      "width": 660,
+      "height": 420,
+      "color": "5"
+    },
+    {
+      "id": "n_public_app_closedatesmodal",
+      "type": "file",
+      "file": "closeDatesModal().md",
+      "x": 20,
+      "y": 780,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_public_app_closeeditmodal",
+      "type": "file",
+      "file": "closeEditModal().md",
+      "x": 220,
+      "y": 780,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_public_app_handlesaveedit",
+      "type": "file",
+      "file": "handleSaveEdit().md",
+      "x": 420,
+      "y": 780,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_public_app_loadslotsforselect",
+      "type": "file",
+      "file": "loadSlotsForSelect().md",
+      "x": 20,
+      "y": 860,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_public_app_oneditdatechange",
+      "type": "file",
+      "file": "onEditDateChange().md",
+      "x": 220,
+      "y": 860,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_public_app_onnewdatechange",
+      "type": "file",
+      "file": "onNewDateChange().md",
+      "x": 420,
+      "y": 860,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_public_app_openeditmodal",
+      "type": "file",
+      "file": "openEditModal().md",
+      "x": 20,
+      "y": 940,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_public_app_opennewmodal",
+      "type": "file",
+      "file": "openNewModal().md",
+      "x": 220,
+      "y": 940,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_public_app_setupeventlisteners",
+      "type": "file",
+      "file": "setupEventListeners().md",
+      "x": 420,
+      "y": 940,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "g5",
+      "type": "group",
+      "label": "Dashboard Table & Stats Renderer",
+      "x": 1180,
+      "y": 700,
+      "width": 660,
+      "height": 420,
+      "color": "6"
+    },
+    {
+      "id": "n_public_app",
+      "type": "file",
+      "file": "app.js.md",
+      "x": 1200,
+      "y": 780,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_public_app_escapehtml",
+      "type": "file",
+      "file": "escapeHtml().md",
+      "x": 1400,
+      "y": 780,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_public_app_formatdisplayphone",
+      "type": "file",
+      "file": "formatDisplayPhone().md",
+      "x": 1600,
+      "y": 780,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_public_app_formattime12h",
+      "type": "file",
+      "file": "formatTime12h().md",
+      "x": 1200,
+      "y": 860,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_public_app_renderappointmentstable",
+      "type": "file",
+      "file": "renderAppointmentsTable().md",
+      "x": 1400,
+      "y": 860,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_public_app_renderdatecards",
+      "type": "file",
+      "file": "renderDateCards().md",
+      "x": 1600,
+      "y": 860,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_public_app_renderdatestable",
+      "type": "file",
+      "file": "renderDatesTable().md",
+      "x": 1200,
+      "y": 940,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_public_app_state",
+      "type": "file",
+      "file": "state.md",
+      "x": 1400,
+      "y": 940,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "g6",
+      "type": "group",
+      "label": "WebSocket Live Sync Client",
+      "x": 2360,
+      "y": 700,
+      "width": 660,
+      "height": 420,
+      "color": "1"
+    },
+    {
+      "id": "n_public_app_fetchinitialdata",
+      "type": "file",
+      "file": "fetchInitialData().md",
+      "x": 2380,
+      "y": 780,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_public_app_fetchstats",
+      "type": "file",
+      "file": "fetchStats().md",
+      "x": 2580,
+      "y": 780,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_public_app_handlesocketmessage",
+      "type": "file",
+      "file": "handleSocketMessage().md",
+      "x": 2780,
+      "y": 780,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_public_app_initwebsocket",
+      "type": "file",
+      "file": "initWebSocket().md",
+      "x": 2380,
+      "y": 860,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_public_app_updatedatedropdowns",
+      "type": "file",
+      "file": "updateDateDropdowns().md",
+      "x": 2580,
+      "y": 860,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_public_app_updatestatsui",
+      "type": "file",
+      "file": "updateStatsUI().md",
+      "x": 2780,
+      "y": 860,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_public_app_updatewhatsappui",
+      "type": "file",
+      "file": "updateWhatsAppUI().md",
+      "x": 2380,
+      "y": 940,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "g7",
+      "type": "group",
+      "label": "CRUD & Notification Actions",
+      "x": 3320,
+      "y": 700,
+      "width": 660,
+      "height": 400,
+      "color": "2"
+    },
+    {
+      "id": "n_public_app_cancelappointment",
+      "type": "file",
+      "file": "cancelAppointment().md",
+      "x": 3340,
+      "y": 780,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_public_app_closenewmodal",
+      "type": "file",
+      "file": "closeNewModal().md",
+      "x": 3540,
+      "y": 780,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_public_app_fetchappointments",
+      "type": "file",
+      "file": "fetchAppointments().md",
+      "x": 3740,
+      "y": 780,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_public_app_handlesavenew",
+      "type": "file",
+      "file": "handleSaveNew().md",
+      "x": 3340,
+      "y": 860,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_public_app_resendnotification",
+      "type": "file",
+      "file": "resendNotification().md",
+      "x": 3540,
+      "y": 860,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_public_app_showtoast",
+      "type": "file",
+      "file": "showToast().md",
+      "x": 3740,
+      "y": 860,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "g8",
+      "type": "group",
+      "label": "Core Utilities",
+      "x": 0,
+      "y": 1200,
+      "width": 600,
+      "height": 400,
+      "color": "3"
+    },
+    {
+      "id": "n_config_config",
+      "type": "file",
+      "file": "CONFIG_3.md",
+      "x": 20,
+      "y": 1280,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_config",
+      "type": "file",
+      "file": "config.js.md",
+      "x": 220,
+      "y": 1280,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_config_path",
+      "type": "file",
+      "file": "path_3.md",
+      "x": 20,
+      "y": 1360,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_ref_path",
+      "type": "file",
+      "file": "ref_path.md",
+      "x": 220,
+      "y": 1360,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "g9",
+      "type": "group",
+      "label": "Interview Quota & Ticket Scheduler",
+      "x": 1180,
+      "y": 1200,
+      "width": 600,
+      "height": 400,
+      "color": "4"
+    },
+    {
+      "id": "n_scheduler_config",
+      "type": "file",
+      "file": "CONFIG_4.md",
+      "x": 1200,
+      "y": 1280,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_scheduler_database",
+      "type": "file",
+      "file": "database_3.md",
+      "x": 1400,
+      "y": 1280,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_scheduler_scheduler",
+      "type": "file",
+      "file": "scheduler_2.md",
+      "x": 1200,
+      "y": 1360,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_scheduler",
+      "type": "file",
+      "file": "scheduler.js.md",
+      "x": 1400,
+      "y": 1360,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "g10",
+      "type": "group",
+      "label": "Dynamic Dates Manager",
+      "x": 2360,
+      "y": 1200,
+      "width": 600,
+      "height": 400,
+      "color": "5"
+    },
+    {
+      "id": "n_public_app_fetchdates",
+      "type": "file",
+      "file": "fetchDates().md",
+      "x": 2380,
+      "y": 1280,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_public_app_handleadddate",
+      "type": "file",
+      "file": "handleAddDate().md",
+      "x": 2580,
+      "y": 1280,
+      "width": 180,
+      "height": 60
+    },
+    {
+      "id": "n_public_app_opendatesmodal",
+      "type": "file",
+      "file": "openDatesModal().md",
+      "x": 2380,
+      "y": 1360,
+      "width": 180,
+      "height": 60
+    }
+  ],
+  "edges": [
+    {
+      "id": "e_whatsapp_whatsappservice_whatsapp",
+      "fromNode": "n_whatsapp_whatsappservice",
+      "toNode": "n_whatsapp",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_whatsapp_whatsappservice_disconnect",
+      "fromNode": "n_whatsapp_whatsappservice",
+      "toNode": "n_whatsapp_whatsappservice_disconnect",
+      "label": "method [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_whatsapp_whatsappservice_start",
+      "fromNode": "n_whatsapp_whatsappservice",
+      "toNode": "n_whatsapp_whatsappservice_start",
+      "label": "method [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_whatsapp_whatsappservice_constructor",
+      "fromNode": "n_whatsapp_whatsappservice",
+      "toNode": "n_whatsapp_whatsappservice_constructor",
+      "label": "method [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_whatsapp_whatsappservice_reconnect",
+      "fromNode": "n_whatsapp_whatsappservice",
+      "toNode": "n_whatsapp_whatsappservice_reconnect",
+      "label": "method [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_whatsapp_whatsappservice_enqueuesend",
+      "fromNode": "n_whatsapp_whatsappservice",
+      "toNode": "n_whatsapp_whatsappservice_enqueuesend",
+      "label": "method [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_whatsapp_whatsappservice_simulatehumantyping",
+      "fromNode": "n_whatsapp_whatsappservice",
+      "toNode": "n_whatsapp_whatsappservice_simulatehumantyping",
+      "label": "method [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_whatsapp_whatsappservice_sendmessage",
+      "fromNode": "n_whatsapp_whatsappservice",
+      "toNode": "n_whatsapp_whatsappservice_sendmessage",
+      "label": "method [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_whatsapp_whatsappservice_onevent",
+      "fromNode": "n_whatsapp_whatsappservice",
+      "toNode": "n_whatsapp_whatsappservice_onevent",
+      "label": "method [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_whatsapp_whatsappservice_getpositionsprompt",
+      "fromNode": "n_whatsapp_whatsappservice",
+      "toNode": "n_whatsapp_whatsappservice_getpositionsprompt",
+      "label": "method [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_whatsapp_whatsappservice_getdatesprompt",
+      "fromNode": "n_whatsapp_whatsappservice",
+      "toNode": "n_whatsapp_whatsappservice_getdatesprompt",
+      "label": "method [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_whatsapp_whatsappservice_handleincomingmessage",
+      "fromNode": "n_whatsapp_whatsappservice",
+      "toNode": "n_whatsapp_whatsappservice_handleincomingmessage",
+      "label": "method [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_whatsapp_whatsappservice_emitevent",
+      "fromNode": "n_whatsapp_whatsappservice",
+      "toNode": "n_whatsapp_whatsappservice_emitevent",
+      "label": "method [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_whatsapp_whatsappservice_getstatus",
+      "fromNode": "n_whatsapp_whatsappservice",
+      "toNode": "n_whatsapp_whatsappservice_getstatus",
+      "label": "method [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_whatsapp_whatsappservice_setpaused",
+      "fromNode": "n_whatsapp_whatsappservice",
+      "toNode": "n_whatsapp_whatsappservice_setpaused",
+      "label": "method [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_whatsapp_whatsappservice_isvalidcandidatename",
+      "fromNode": "n_whatsapp_whatsappservice",
+      "toNode": "n_whatsapp_whatsappservice_isvalidcandidatename",
+      "label": "method [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_whatsapp_whatsappservice_finalizeappointment",
+      "fromNode": "n_whatsapp_whatsappservice",
+      "toNode": "n_whatsapp_whatsappservice_finalizeappointment",
+      "label": "method [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_whatsapp_whatsappservice_requestpairingcode",
+      "fromNode": "n_whatsapp_whatsappservice",
+      "toNode": "n_whatsapp_whatsappservice_requestpairingcode",
+      "label": "method [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_whatsapp_whatsappservice_recoverfromhistory",
+      "fromNode": "n_whatsapp_whatsappservice",
+      "toNode": "n_whatsapp_whatsappservice_recoverfromhistory",
+      "label": "method [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_whatsapp_whatsappservice_resolvedatelabel",
+      "fromNode": "n_whatsapp_whatsappservice",
+      "toNode": "n_whatsapp_whatsappservice_resolvedatelabel",
+      "label": "method [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_whatsapp_whatsappservice_reply",
+      "fromNode": "n_whatsapp_whatsappservice",
+      "toNode": "n_whatsapp_whatsappservice_reply",
+      "label": "method [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_antiban_shield",
+      "fromNode": "n_whatsapp_whatsappservice",
+      "toNode": "n_antiban_shield",
+      "label": "implements [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_conflict_440_guard",
+      "fromNode": "n_whatsapp_whatsappservice",
+      "toNode": "n_conflict_440_guard",
+      "label": "implements [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_pairing_code_auth",
+      "fromNode": "n_whatsapp_whatsappservice",
+      "toNode": "n_pairing_code_auth",
+      "label": "implements [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_disconnect_whatsapp_whatsappservice_emitevent",
+      "fromNode": "n_whatsapp_whatsappservice_disconnect",
+      "toNode": "n_whatsapp_whatsappservice_emitevent",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_disconnect_whatsapp_whatsappservice_getstatus",
+      "fromNode": "n_whatsapp_whatsappservice_disconnect",
+      "toNode": "n_whatsapp_whatsappservice_getstatus",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_disconnect_whatsapp_whatsappservice_setpaused",
+      "fromNode": "n_whatsapp_whatsappservice_disconnect",
+      "toNode": "n_whatsapp_whatsappservice_setpaused",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_emitevent_whatsapp_whatsappservice_finalizeappointment",
+      "fromNode": "n_whatsapp_whatsappservice_emitevent",
+      "toNode": "n_whatsapp_whatsappservice_finalizeappointment",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_emitevent_whatsapp_whatsappservice_recoverfromhistory",
+      "fromNode": "n_whatsapp_whatsappservice_emitevent",
+      "toNode": "n_whatsapp_whatsappservice_recoverfromhistory",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_emitevent_whatsapp_whatsappservice_requestpairingcode",
+      "fromNode": "n_whatsapp_whatsappservice_emitevent",
+      "toNode": "n_whatsapp_whatsappservice_requestpairingcode",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_emitevent_whatsapp_whatsappservice_setpaused",
+      "fromNode": "n_whatsapp_whatsappservice_emitevent",
+      "toNode": "n_whatsapp_whatsappservice_setpaused",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_emitevent_whatsapp_whatsappservice_start",
+      "fromNode": "n_whatsapp_whatsappservice_emitevent",
+      "toNode": "n_whatsapp_whatsappservice_start",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_enqueuesend_whatsapp_whatsappservice_reply",
+      "fromNode": "n_whatsapp_whatsappservice_enqueuesend",
+      "toNode": "n_whatsapp_whatsappservice_reply",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_enqueuesend_whatsapp_whatsappservice_sendmessage",
+      "fromNode": "n_whatsapp_whatsappservice_enqueuesend",
+      "toNode": "n_whatsapp_whatsappservice_sendmessage",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_finalizeappointment_whatsapp_whatsappservice_reply",
+      "fromNode": "n_whatsapp_whatsappservice_finalizeappointment",
+      "toNode": "n_whatsapp_whatsappservice_reply",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_finalizeappointment_whatsapp_whatsappservice_sendmessage",
+      "fromNode": "n_whatsapp_whatsappservice_finalizeappointment",
+      "toNode": "n_whatsapp_whatsappservice_sendmessage",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_finalizeappointment_whatsapp_whatsappservice_handleincomingmessage",
+      "fromNode": "n_whatsapp_whatsappservice_finalizeappointment",
+      "toNode": "n_whatsapp_whatsappservice_handleincomingmessage",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_getdatesprompt_whatsapp_whatsappservice_handleincomingmessage",
+      "fromNode": "n_whatsapp_whatsappservice_getdatesprompt",
+      "toNode": "n_whatsapp_whatsappservice_handleincomingmessage",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_getpositionsprompt_whatsapp_whatsappservice_handleincomingmessage",
+      "fromNode": "n_whatsapp_whatsappservice_getpositionsprompt",
+      "toNode": "n_whatsapp_whatsappservice_handleincomingmessage",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_getstatus_whatsapp_whatsappservice_requestpairingcode",
+      "fromNode": "n_whatsapp_whatsappservice_getstatus",
+      "toNode": "n_whatsapp_whatsappservice_requestpairingcode",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_getstatus_whatsapp_whatsappservice_setpaused",
+      "fromNode": "n_whatsapp_whatsappservice_getstatus",
+      "toNode": "n_whatsapp_whatsappservice_setpaused",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_getstatus_whatsapp_whatsappservice_start",
+      "fromNode": "n_whatsapp_whatsappservice_getstatus",
+      "toNode": "n_whatsapp_whatsappservice_start",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_handleincomingmessage_whatsapp_whatsappservice_reply",
+      "fromNode": "n_whatsapp_whatsappservice_handleincomingmessage",
+      "toNode": "n_whatsapp_whatsappservice_reply",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_handleincomingmessage_whatsapp_whatsappservice_isvalidcandidatename",
+      "fromNode": "n_whatsapp_whatsappservice_handleincomingmessage",
+      "toNode": "n_whatsapp_whatsappservice_isvalidcandidatename",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_handleincomingmessage_whatsapp_whatsappservice_start",
+      "fromNode": "n_whatsapp_whatsappservice_handleincomingmessage",
+      "toNode": "n_whatsapp_whatsappservice_start",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_reconnect_whatsapp_whatsappservice_start",
+      "fromNode": "n_whatsapp_whatsappservice_reconnect",
+      "toNode": "n_whatsapp_whatsappservice_start",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_recoverfromhistory_whatsapp_whatsappservice_resolvedatelabel",
+      "fromNode": "n_whatsapp_whatsappservice_recoverfromhistory",
+      "toNode": "n_whatsapp_whatsappservice_resolvedatelabel",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_recoverfromhistory_whatsapp_whatsappservice_sendmessage",
+      "fromNode": "n_whatsapp_whatsappservice_recoverfromhistory",
+      "toNode": "n_whatsapp_whatsappservice_sendmessage",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_recoverfromhistory_whatsapp_whatsappservice_start",
+      "fromNode": "n_whatsapp_whatsappservice_recoverfromhistory",
+      "toNode": "n_whatsapp_whatsappservice_start",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_reply_whatsapp_whatsappservice_simulatehumantyping",
+      "fromNode": "n_whatsapp_whatsappservice_reply",
+      "toNode": "n_whatsapp_whatsappservice_simulatehumantyping",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_requestpairingcode_whatsapp_whatsappservice_start",
+      "fromNode": "n_whatsapp_whatsappservice_requestpairingcode",
+      "toNode": "n_whatsapp_whatsappservice_start",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_sendmessage_whatsapp_whatsappservice_simulatehumantyping",
+      "fromNode": "n_whatsapp_whatsappservice_sendmessage",
+      "toNode": "n_whatsapp_whatsappservice_simulatehumantyping",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_setpaused_whatsapp_whatsappservice_start",
+      "fromNode": "n_whatsapp_whatsappservice_setpaused",
+      "toNode": "n_whatsapp_whatsappservice_start",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsappservice_start_whatsapp_pino",
+      "fromNode": "n_whatsapp_whatsappservice_start",
+      "toNode": "n_whatsapp_pino",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_server_broadcast_server",
+      "fromNode": "n_server_broadcast",
+      "toNode": "n_server",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_server_normalizeappointment_server",
+      "fromNode": "n_server_normalizeappointment",
+      "toNode": "n_server",
+      "label": "indirect_call [INFERRED]"
+    },
+    {
+      "id": "e_server_startserver_server",
+      "fromNode": "n_server_startserver",
+      "toNode": "n_server",
+      "label": "indirect_call [INFERRED]"
+    },
+    {
+      "id": "e_server_startserver_public_booking_portal",
+      "fromNode": "n_server_startserver",
+      "toNode": "n_public_booking_portal",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_fetchdates_public_app_updatedatedropdowns",
+      "fromNode": "n_public_app_fetchdates",
+      "toNode": "n_public_app_updatedatedropdowns",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_fetchdates_public_app_renderdatestable",
+      "fromNode": "n_public_app_fetchdates",
+      "toNode": "n_public_app_renderdatestable",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_fetchdates_public_app_showtoast",
+      "fromNode": "n_public_app_fetchdates",
+      "toNode": "n_public_app_showtoast",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_fetchdates_public_app_handleadddate",
+      "fromNode": "n_public_app_fetchdates",
+      "toNode": "n_public_app_handleadddate",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_fetchdates_public_app_opendatesmodal",
+      "fromNode": "n_public_app_fetchdates",
+      "toNode": "n_public_app_opendatesmodal",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_fetchdates_public_app",
+      "fromNode": "n_public_app_fetchdates",
+      "toNode": "n_public_app",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_handleadddate_public_app_showtoast",
+      "fromNode": "n_public_app_handleadddate",
+      "toNode": "n_public_app_showtoast",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_handleadddate_public_app_fetchstats",
+      "fromNode": "n_public_app_handleadddate",
+      "toNode": "n_public_app_fetchstats",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_handleadddate_public_app",
+      "fromNode": "n_public_app_handleadddate",
+      "toNode": "n_public_app",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_handleadddate_public_app_setupeventlisteners",
+      "fromNode": "n_public_app_handleadddate",
+      "toNode": "n_public_app_setupeventlisteners",
+      "label": "indirect_call [INFERRED]"
+    },
+    {
+      "id": "e_public_app_opendatesmodal_public_app",
+      "fromNode": "n_public_app_opendatesmodal",
+      "toNode": "n_public_app",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_opendatesmodal_public_app_setupeventlisteners",
+      "fromNode": "n_public_app_opendatesmodal",
+      "toNode": "n_public_app_setupeventlisteners",
+      "label": "indirect_call [INFERRED]"
+    },
+    {
+      "id": "e_database_syncfromseedrecovery_database",
+      "fromNode": "n_database_syncfromseedrecovery",
+      "toNode": "n_database",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_closedatesmodal_public_app",
+      "fromNode": "n_public_app_closedatesmodal",
+      "toNode": "n_public_app",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_closedatesmodal_public_app_setupeventlisteners",
+      "fromNode": "n_public_app_closedatesmodal",
+      "toNode": "n_public_app_setupeventlisteners",
+      "label": "indirect_call [INFERRED]"
+    },
+    {
+      "id": "e_public_app_closeeditmodal_public_app_handlesaveedit",
+      "fromNode": "n_public_app_closeeditmodal",
+      "toNode": "n_public_app_handlesaveedit",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_closeeditmodal_public_app",
+      "fromNode": "n_public_app_closeeditmodal",
+      "toNode": "n_public_app",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_closeeditmodal_public_app_setupeventlisteners",
+      "fromNode": "n_public_app_closeeditmodal",
+      "toNode": "n_public_app_setupeventlisteners",
+      "label": "indirect_call [INFERRED]"
+    },
+    {
+      "id": "e_public_app_handlesaveedit_public_app_showtoast",
+      "fromNode": "n_public_app_handlesaveedit",
+      "toNode": "n_public_app_showtoast",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_handlesaveedit_public_app_fetchappointments",
+      "fromNode": "n_public_app_handlesaveedit",
+      "toNode": "n_public_app_fetchappointments",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_handlesaveedit_public_app_fetchstats",
+      "fromNode": "n_public_app_handlesaveedit",
+      "toNode": "n_public_app_fetchstats",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_handlesaveedit_public_app",
+      "fromNode": "n_public_app_handlesaveedit",
+      "toNode": "n_public_app",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_handlesaveedit_public_app_setupeventlisteners",
+      "fromNode": "n_public_app_handlesaveedit",
+      "toNode": "n_public_app_setupeventlisteners",
+      "label": "indirect_call [INFERRED]"
+    },
+    {
+      "id": "e_public_app_loadslotsforselect_public_app_formattime12h",
+      "fromNode": "n_public_app_loadslotsforselect",
+      "toNode": "n_public_app_formattime12h",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_loadslotsforselect_public_app_oneditdatechange",
+      "fromNode": "n_public_app_loadslotsforselect",
+      "toNode": "n_public_app_oneditdatechange",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_loadslotsforselect_public_app_onnewdatechange",
+      "fromNode": "n_public_app_loadslotsforselect",
+      "toNode": "n_public_app_onnewdatechange",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_loadslotsforselect_public_app_openeditmodal",
+      "fromNode": "n_public_app_loadslotsforselect",
+      "toNode": "n_public_app_openeditmodal",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_loadslotsforselect_public_app_opennewmodal",
+      "fromNode": "n_public_app_loadslotsforselect",
+      "toNode": "n_public_app_opennewmodal",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_loadslotsforselect_public_app",
+      "fromNode": "n_public_app_loadslotsforselect",
+      "toNode": "n_public_app",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_oneditdatechange_public_app",
+      "fromNode": "n_public_app_oneditdatechange",
+      "toNode": "n_public_app",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_oneditdatechange_public_app_setupeventlisteners",
+      "fromNode": "n_public_app_oneditdatechange",
+      "toNode": "n_public_app_setupeventlisteners",
+      "label": "indirect_call [INFERRED]"
+    },
+    {
+      "id": "e_public_app_onnewdatechange_public_app",
+      "fromNode": "n_public_app_onnewdatechange",
+      "toNode": "n_public_app",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_onnewdatechange_public_app_setupeventlisteners",
+      "fromNode": "n_public_app_onnewdatechange",
+      "toNode": "n_public_app_setupeventlisteners",
+      "label": "indirect_call [INFERRED]"
+    },
+    {
+      "id": "e_public_app_openeditmodal_public_app_showtoast",
+      "fromNode": "n_public_app_openeditmodal",
+      "toNode": "n_public_app_showtoast",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_openeditmodal_public_app",
+      "fromNode": "n_public_app_openeditmodal",
+      "toNode": "n_public_app",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_opennewmodal_public_app",
+      "fromNode": "n_public_app_opennewmodal",
+      "toNode": "n_public_app",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_opennewmodal_public_app_setupeventlisteners",
+      "fromNode": "n_public_app_opennewmodal",
+      "toNode": "n_public_app_setupeventlisteners",
+      "label": "indirect_call [INFERRED]"
+    },
+    {
+      "id": "e_public_app_setupeventlisteners_public_app_fetchappointments",
+      "fromNode": "n_public_app_setupeventlisteners",
+      "toNode": "n_public_app_fetchappointments",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_setupeventlisteners_public_app_fetchstats",
+      "fromNode": "n_public_app_setupeventlisteners",
+      "toNode": "n_public_app_fetchstats",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_setupeventlisteners_public_app_showtoast",
+      "fromNode": "n_public_app_setupeventlisteners",
+      "toNode": "n_public_app_showtoast",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_setupeventlisteners_public_app_updatewhatsappui",
+      "fromNode": "n_public_app_setupeventlisteners",
+      "toNode": "n_public_app_updatewhatsappui",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_setupeventlisteners_public_app",
+      "fromNode": "n_public_app_setupeventlisteners",
+      "toNode": "n_public_app",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_setupeventlisteners_public_app_closenewmodal",
+      "fromNode": "n_public_app_setupeventlisteners",
+      "toNode": "n_public_app_closenewmodal",
+      "label": "indirect_call [INFERRED]"
+    },
+    {
+      "id": "e_public_app_setupeventlisteners_public_app_handlesavenew",
+      "fromNode": "n_public_app_setupeventlisteners",
+      "toNode": "n_public_app_handlesavenew",
+      "label": "indirect_call [INFERRED]"
+    },
+    {
+      "id": "e_public_app_escapehtml_public_app_renderappointmentstable",
+      "fromNode": "n_public_app_escapehtml",
+      "toNode": "n_public_app_renderappointmentstable",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_escapehtml_public_app_renderdatecards",
+      "fromNode": "n_public_app_escapehtml",
+      "toNode": "n_public_app_renderdatecards",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_escapehtml_public_app_renderdatestable",
+      "fromNode": "n_public_app_escapehtml",
+      "toNode": "n_public_app_renderdatestable",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_escapehtml_public_app_showtoast",
+      "fromNode": "n_public_app_escapehtml",
+      "toNode": "n_public_app_showtoast",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_escapehtml_public_app",
+      "fromNode": "n_public_app_escapehtml",
+      "toNode": "n_public_app",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_formatdisplayphone_public_app_renderappointmentstable",
+      "fromNode": "n_public_app_formatdisplayphone",
+      "toNode": "n_public_app_renderappointmentstable",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_formatdisplayphone_public_app",
+      "fromNode": "n_public_app_formatdisplayphone",
+      "toNode": "n_public_app",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_formattime12h_public_app_renderappointmentstable",
+      "fromNode": "n_public_app_formattime12h",
+      "toNode": "n_public_app_renderappointmentstable",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_formattime12h_public_app",
+      "fromNode": "n_public_app_formattime12h",
+      "toNode": "n_public_app",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_renderappointmentstable_public_app_fetchappointments",
+      "fromNode": "n_public_app_renderappointmentstable",
+      "toNode": "n_public_app_fetchappointments",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_renderappointmentstable_public_app",
+      "fromNode": "n_public_app_renderappointmentstable",
+      "toNode": "n_public_app",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_renderdatecards_public_app_updatestatsui",
+      "fromNode": "n_public_app_renderdatecards",
+      "toNode": "n_public_app_updatestatsui",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_renderdatecards_public_app",
+      "fromNode": "n_public_app_renderdatecards",
+      "toNode": "n_public_app",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_renderdatestable_public_app_handlesocketmessage",
+      "fromNode": "n_public_app_renderdatestable",
+      "toNode": "n_public_app_handlesocketmessage",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_renderdatestable_public_app",
+      "fromNode": "n_public_app_renderdatestable",
+      "toNode": "n_public_app",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_fetchinitialdata_public_app_updatewhatsappui",
+      "fromNode": "n_public_app_fetchinitialdata",
+      "toNode": "n_public_app_updatewhatsappui",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_fetchinitialdata_public_app_updatestatsui",
+      "fromNode": "n_public_app_fetchinitialdata",
+      "toNode": "n_public_app_updatestatsui",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_fetchinitialdata_public_app_updatedatedropdowns",
+      "fromNode": "n_public_app_fetchinitialdata",
+      "toNode": "n_public_app_updatedatedropdowns",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_fetchinitialdata_public_app_fetchappointments",
+      "fromNode": "n_public_app_fetchinitialdata",
+      "toNode": "n_public_app_fetchappointments",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_fetchinitialdata_public_app",
+      "fromNode": "n_public_app_fetchinitialdata",
+      "toNode": "n_public_app",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_fetchstats_public_app_cancelappointment",
+      "fromNode": "n_public_app_fetchstats",
+      "toNode": "n_public_app_cancelappointment",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_fetchstats_public_app_updatestatsui",
+      "fromNode": "n_public_app_fetchstats",
+      "toNode": "n_public_app_updatestatsui",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_fetchstats_public_app_handlesavenew",
+      "fromNode": "n_public_app_fetchstats",
+      "toNode": "n_public_app_handlesavenew",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_fetchstats_public_app_handlesocketmessage",
+      "fromNode": "n_public_app_fetchstats",
+      "toNode": "n_public_app_handlesocketmessage",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_fetchstats_public_app",
+      "fromNode": "n_public_app_fetchstats",
+      "toNode": "n_public_app",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_handlesocketmessage_public_app_showtoast",
+      "fromNode": "n_public_app_handlesocketmessage",
+      "toNode": "n_public_app_showtoast",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_handlesocketmessage_public_app_fetchappointments",
+      "fromNode": "n_public_app_handlesocketmessage",
+      "toNode": "n_public_app_fetchappointments",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_handlesocketmessage_public_app_updatewhatsappui",
+      "fromNode": "n_public_app_handlesocketmessage",
+      "toNode": "n_public_app_updatewhatsappui",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_handlesocketmessage_public_app_updatestatsui",
+      "fromNode": "n_public_app_handlesocketmessage",
+      "toNode": "n_public_app_updatestatsui",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_handlesocketmessage_public_app_updatedatedropdowns",
+      "fromNode": "n_public_app_handlesocketmessage",
+      "toNode": "n_public_app_updatedatedropdowns",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_handlesocketmessage_public_app_initwebsocket",
+      "fromNode": "n_public_app_handlesocketmessage",
+      "toNode": "n_public_app_initwebsocket",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_handlesocketmessage_public_app",
+      "fromNode": "n_public_app_handlesocketmessage",
+      "toNode": "n_public_app",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_initwebsocket_public_app",
+      "fromNode": "n_public_app_initwebsocket",
+      "toNode": "n_public_app",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_updatedatedropdowns_public_app",
+      "fromNode": "n_public_app_updatedatedropdowns",
+      "toNode": "n_public_app",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_updatestatsui_public_app",
+      "fromNode": "n_public_app_updatestatsui",
+      "toNode": "n_public_app",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_updatewhatsappui_public_app",
+      "fromNode": "n_public_app_updatewhatsappui",
+      "toNode": "n_public_app",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_cancelappointment_public_app_showtoast",
+      "fromNode": "n_public_app_cancelappointment",
+      "toNode": "n_public_app_showtoast",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_cancelappointment_public_app_fetchappointments",
+      "fromNode": "n_public_app_cancelappointment",
+      "toNode": "n_public_app_fetchappointments",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_cancelappointment_public_app",
+      "fromNode": "n_public_app_cancelappointment",
+      "toNode": "n_public_app",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_closenewmodal_public_app_handlesavenew",
+      "fromNode": "n_public_app_closenewmodal",
+      "toNode": "n_public_app_handlesavenew",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_closenewmodal_public_app",
+      "fromNode": "n_public_app_closenewmodal",
+      "toNode": "n_public_app",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_fetchappointments_public_app_showtoast",
+      "fromNode": "n_public_app_fetchappointments",
+      "toNode": "n_public_app_showtoast",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_fetchappointments_public_app_handlesavenew",
+      "fromNode": "n_public_app_fetchappointments",
+      "toNode": "n_public_app_handlesavenew",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_fetchappointments_public_app_resendnotification",
+      "fromNode": "n_public_app_fetchappointments",
+      "toNode": "n_public_app_resendnotification",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_fetchappointments_public_app",
+      "fromNode": "n_public_app_fetchappointments",
+      "toNode": "n_public_app",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_handlesavenew_public_app_showtoast",
+      "fromNode": "n_public_app_handlesavenew",
+      "toNode": "n_public_app_showtoast",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_handlesavenew_public_app",
+      "fromNode": "n_public_app_handlesavenew",
+      "toNode": "n_public_app",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_resendnotification_public_app_showtoast",
+      "fromNode": "n_public_app_resendnotification",
+      "toNode": "n_public_app_showtoast",
+      "label": "calls [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_resendnotification_public_app",
+      "fromNode": "n_public_app_resendnotification",
+      "toNode": "n_public_app",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_public_app_showtoast_public_app",
+      "fromNode": "n_public_app_showtoast",
+      "toNode": "n_public_app",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_server_ref_express",
+      "fromNode": "n_server",
+      "toNode": "n_ref_express",
+      "label": "imports_from [EXTRACTED]"
+    },
+    {
+      "id": "e_server_scheduler",
+      "fromNode": "n_server",
+      "toNode": "n_scheduler",
+      "label": "imports_from [EXTRACTED]"
+    },
+    {
+      "id": "e_server_whatsapp",
+      "fromNode": "n_server",
+      "toNode": "n_whatsapp",
+      "label": "imports_from [EXTRACTED]"
+    },
+    {
+      "id": "e_server_ref_http",
+      "fromNode": "n_server",
+      "toNode": "n_ref_http",
+      "label": "imports_from [EXTRACTED]"
+    },
+    {
+      "id": "e_server_ref_path",
+      "fromNode": "n_server",
+      "toNode": "n_ref_path",
+      "label": "imports_from [EXTRACTED]"
+    },
+    {
+      "id": "e_server_ref_cors",
+      "fromNode": "n_server",
+      "toNode": "n_ref_cors",
+      "label": "imports_from [EXTRACTED]"
+    },
+    {
+      "id": "e_server_ref_crypto",
+      "fromNode": "n_server",
+      "toNode": "n_ref_crypto",
+      "label": "imports_from [EXTRACTED]"
+    },
+    {
+      "id": "e_server_ref_fs",
+      "fromNode": "n_server",
+      "toNode": "n_ref_fs",
+      "label": "imports_from [EXTRACTED]"
+    },
+    {
+      "id": "e_server_ref_ws",
+      "fromNode": "n_server",
+      "toNode": "n_ref_ws",
+      "label": "imports_from [EXTRACTED]"
+    },
+    {
+      "id": "e_server_ref_exceljs",
+      "fromNode": "n_server",
+      "toNode": "n_ref_exceljs",
+      "label": "imports_from [EXTRACTED]"
+    },
+    {
+      "id": "e_server_config",
+      "fromNode": "n_server",
+      "toNode": "n_config",
+      "label": "imports_from [EXTRACTED]"
+    },
+    {
+      "id": "e_server_database",
+      "fromNode": "n_server",
+      "toNode": "n_database",
+      "label": "imports_from [EXTRACTED]"
+    },
+    {
+      "id": "e_server_server_express",
+      "fromNode": "n_server",
+      "toNode": "n_server_express",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_server_server_scheduler",
+      "fromNode": "n_server",
+      "toNode": "n_server_scheduler",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_server_server_whatsappservice",
+      "fromNode": "n_server",
+      "toNode": "n_server_whatsappservice",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_server_server_app",
+      "fromNode": "n_server",
+      "toNode": "n_server_app",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_server_server_server",
+      "fromNode": "n_server",
+      "toNode": "n_server_server",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_server_server_wss",
+      "fromNode": "n_server",
+      "toNode": "n_server_wss",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_server_server_http",
+      "fromNode": "n_server",
+      "toNode": "n_server_http",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_server_server_path",
+      "fromNode": "n_server",
+      "toNode": "n_server_path",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_server_server_cors",
+      "fromNode": "n_server",
+      "toNode": "n_server_cors",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_server_server_websocket",
+      "fromNode": "n_server",
+      "toNode": "n_server_websocket",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_server_server_exceljs",
+      "fromNode": "n_server",
+      "toNode": "n_server_exceljs",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_server_server_config",
+      "fromNode": "n_server",
+      "toNode": "n_server_config",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_server_server_database",
+      "fromNode": "n_server",
+      "toNode": "n_server_database",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_ref_whiskeysockets_baileys",
+      "fromNode": "n_whatsapp",
+      "toNode": "n_ref_whiskeysockets_baileys",
+      "label": "imports_from [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_ref_pino",
+      "fromNode": "n_whatsapp",
+      "toNode": "n_ref_pino",
+      "label": "imports_from [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_ref_qrcode",
+      "fromNode": "n_whatsapp",
+      "toNode": "n_ref_qrcode",
+      "label": "imports_from [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_ref_fs",
+      "fromNode": "n_whatsapp",
+      "toNode": "n_ref_fs",
+      "label": "imports_from [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_ref_path",
+      "fromNode": "n_whatsapp",
+      "toNode": "n_ref_path",
+      "label": "imports_from [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_config",
+      "fromNode": "n_whatsapp",
+      "toNode": "n_config",
+      "label": "imports_from [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_database",
+      "fromNode": "n_whatsapp",
+      "toNode": "n_database",
+      "label": "imports_from [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_scheduler",
+      "fromNode": "n_whatsapp",
+      "toNode": "n_scheduler",
+      "label": "imports_from [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsapp_default_makewasocket_usemultifileauthstate_disconnectreason_fetchlatestbaileysversion_jidnormalizeduser_isliduser_browsers",
+      "fromNode": "n_whatsapp",
+      "toNode": "n_whatsapp_default_makewasocket_usemultifileauthstate_disconnectreason_fetchlatestbaileysversion_jidnormalizeduser_isliduser_browsers",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsapp_pino",
+      "fromNode": "n_whatsapp",
+      "toNode": "n_whatsapp_pino",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsapp_qrcode",
+      "fromNode": "n_whatsapp",
+      "toNode": "n_whatsapp_qrcode",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsapp_fs",
+      "fromNode": "n_whatsapp",
+      "toNode": "n_whatsapp_fs",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsapp_path",
+      "fromNode": "n_whatsapp",
+      "toNode": "n_whatsapp_path",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsapp_config",
+      "fromNode": "n_whatsapp",
+      "toNode": "n_whatsapp_config",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsapp_database",
+      "fromNode": "n_whatsapp",
+      "toNode": "n_whatsapp_database",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsapp_scheduler",
+      "fromNode": "n_whatsapp",
+      "toNode": "n_whatsapp_scheduler",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_whatsapp_whatsapp_months_es",
+      "fromNode": "n_whatsapp",
+      "toNode": "n_whatsapp_months_es",
+      "label": "contains [EXTRACTED]"
+    },
+    {
+      "id": "e_database_ref_node_sqlite",
+      "fromNode": "n_database",
+      "toNode": "n_ref_node_sqlite",
+      "label": "imports_from [EXTRACTED]"
+    },
+    {
+      "id": "e_database_ref_fs",
+      "fromNode": "n_database",
+      "toNode": "n_ref_fs",
+      "label": "imports_from [EXTRACTED]"
+    },
+    {
+      "id": "e_database_ref_path",
+      "fromNode": "n_database",
+      "toNode": "n_ref_path",
+      "label": "imports_from [EXTRACTED]"
+    },
+    {
+      "id": "e_database_config",
+      "fromNode": "n_database",
+      "toNode": "n_config",
+      "label": "imports_from [EXTRACTED]"
+    },
+    {
+      "id": "e_database_scheduler",
+      "fromNode": "n_database",
+      "toNode": "n_scheduler",
+      "label": "imports_from [EXTRACTED]"
+    },
+    {
+      "id": "e_database_database_databasesync",
+      "fromNode": "n_database",
+      "toNode": "n_database_databasesync",
+      "label": "contains [EXTRACTED]"
+    }
+  ]
+}

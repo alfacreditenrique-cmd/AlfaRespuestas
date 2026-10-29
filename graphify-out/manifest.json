@@ -1,0 +1,56 @@
+{
+  "C:\\sistema\\AlfaRespuestas\\src\\config.js": {
+    "mtime": 1793293764.9957325,
+    "seen": 1793294242.6513667,
+    "ast_hash": "9a492c00ef8d92ac9077e1f3ec8fe33b",
+    "semantic_hash": "9a492c00ef8d92ac9077e1f3ec8fe33b"
+  },
+  "C:\\sistema\\AlfaRespuestas\\src\\database.js": {
+    "mtime": 1793292602.8402815,
+    "seen": 1793294242.651374,
+    "ast_hash": "4729bc55fe8736cabd6d4663fafe7820",
+    "semantic_hash": "4729bc55fe8736cabd6d4663fafe7820"
+  },
+  "C:\\sistema\\AlfaRespuestas\\src\\public\\app.js": {
+    "mtime": 1793294154.5001805,
+    "seen": 1793294242.6513772,
+    "ast_hash": "a7959e937484286e37df8cebb482aabf",
+    "semantic_hash": "a7959e937484286e37df8cebb482aabf"
+  },
+  "C:\\sistema\\AlfaRespuestas\\src\\scheduler.js": {
+    "mtime": 1793200580.9424944,
+    "seen": 1793294242.6513784,
+    "ast_hash": "c38c194fa452d0b7090f998ab9b18977",
+    "semantic_hash": "c38c194fa452d0b7090f998ab9b18977"
+  },
+  "C:\\sistema\\AlfaRespuestas\\src\\seed-recovery.json": {
+    "mtime": 1793292631.267048,
+    "seen": 1793294242.6513803,
+    "ast_hash": "e06ab16c51c62f62ed02c0880e3e0791",
+    "semantic_hash": "e06ab16c51c62f62ed02c0880e3e0791"
+  },
+  "C:\\sistema\\AlfaRespuestas\\src\\server.js": {
+    "mtime": 1793293994.9885638,
+    "seen": 1793294242.6513813,
+    "ast_hash": "2529dc8d84a34d16e99c535b3244f56c",
+    "semantic_hash": "2529dc8d84a34d16e99c535b3244f56c"
+  },
+  "C:\\sistema\\AlfaRespuestas\\src\\whatsapp.js": {
+    "mtime": 1793293911.8559866,
+    "seen": 1793294242.6513824,
+    "ast_hash": "d02c3ad4211d6e92d53e39f8ac0deaf9",
+    "semantic_hash": "d02c3ad4211d6e92d53e39f8ac0deaf9"
+  },
+  "C:\\sistema\\AlfaRespuestas\\src\\public\\agendar.html": {
+    "mtime": 1793294030.3916144,
+    "seen": 1793294242.651384,
+    "ast_hash": "8e0a0c8eea756d4dad25131fa0fa4a40",
+    "semantic_hash": "8e0a0c8eea756d4dad25131fa0fa4a40"
+  },
+  "C:\\sistema\\AlfaRespuestas\\src\\public\\index.html": {
+    "mtime": 1793294090.572961,
+    "seen": 1793294242.6513853,
+    "ast_hash": "3d82e11cff88155af8381484e6f9190b",
+    "semantic_hash": "3d82e11cff88155af8381484e6f9190b"
+  }
+}

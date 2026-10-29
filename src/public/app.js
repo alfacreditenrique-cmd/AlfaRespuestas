@@ -97,8 +97,9 @@ function handleSocketMessage(msg) {
   } else if (event === 'status_change') {
     updateWhatsAppUI(data);
   } else if (event === 'qr') {
-    if (state.whatsapp) state.whatsapp.qrDataUrl = data.qrDataUrl;
-    updateWhatsAppUI({ status: 'QR_READY', qrDataUrl: data.qrDataUrl });
+    updateWhatsAppUI({ ...(state.whatsapp || {}), status: 'QR_READY', qrDataUrl: data.qrDataUrl });
+  } else if (event === 'pairing_code') {
+    updateWhatsAppUI({ ...(state.whatsapp || {}), pairingCode: data.pairingCode });
   } else if (event === 'new_appointment' || event === 'appointment_created') {
     showToast(`🎉 Nueva cita agendada: ${data.candidate_name} (${data.time_slot})`, 'success');
     fetchAppointments();
@@ -182,15 +183,47 @@ function updateWhatsAppUI(wa) {
   const connectingView = document.getElementById('waConnectingView');
   const qrImage = document.getElementById('waQrImage');
   const connectedAccount = document.getElementById('waConnectedAccount');
+  const alertReason = document.getElementById('waAlertReason');
+  const pauseBtn = document.getElementById('btnTogglePauseWa');
+  const pairingBox = document.getElementById('waPairingBox');
+  const pairingDisplay = document.getElementById('pairingCodeDisplay');
+  const connectingText = document.getElementById('waConnectingText');
+  const spinnerIcon = document.getElementById('waSpinnerIcon');
+
+  if (alertReason) {
+    if (wa.lastDisconnectReason) {
+      alertReason.textContent = wa.lastDisconnectReason;
+      alertReason.classList.remove('hidden');
+    } else {
+      alertReason.classList.add('hidden');
+    }
+  }
+
+  if (pauseBtn) {
+    pauseBtn.innerHTML = wa.paused
+      ? '<i class="fa-solid fa-play mr-0.5 text-emerald-600"></i>Reanudar'
+      : '<i class="fa-solid fa-pause mr-0.5"></i>Pausar';
+  }
+
+  if (pairingDisplay) {
+    if (wa.pairingCode) {
+      pairingDisplay.textContent = `CÓDIGO: ${wa.pairingCode}`;
+      pairingDisplay.classList.remove('hidden');
+    } else {
+      pairingDisplay.textContent = '';
+      pairingDisplay.classList.add('hidden');
+    }
+  }
 
   if (wa.status === 'CONNECTED') {
     badge.className = 'flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
     badge.firstElementChild.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400';
-    statusText.textContent = 'WhatsApp Activo';
+    statusText.textContent = 'WhatsApp Activo (Anti-Ban)';
 
     connectedView.classList.remove('hidden');
     qrView.classList.add('hidden');
     connectingView.classList.add('hidden');
+    if (pairingBox) pairingBox.classList.add('hidden');
 
     if (wa.connectionInfo) {
       connectedAccount.textContent = wa.connectionInfo.name ? `${wa.connectionInfo.name} (${wa.connectionInfo.id.split(':')[0]})` : wa.connectionInfo.id.split(':')[0];
@@ -198,12 +231,24 @@ function updateWhatsAppUI(wa) {
   } else if (wa.status === 'QR_READY' && wa.qrDataUrl) {
     badge.className = 'flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/40';
     badge.firstElementChild.className = 'w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse';
-    statusText.textContent = 'Escanea el Código QR';
+    statusText.textContent = 'Escanea QR o Usa Código';
 
     connectedView.classList.add('hidden');
     qrView.classList.remove('hidden');
     connectingView.classList.add('hidden');
+    if (pairingBox) pairingBox.classList.remove('hidden');
     qrImage.src = wa.qrDataUrl;
+  } else if (wa.status === 'PAUSED' || wa.status === 'CONFLICT' || wa.status === 'RESTRICTED') {
+    badge.className = 'flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-red-500/20 text-red-300 border border-red-500/40';
+    badge.firstElementChild.className = 'w-2.5 h-2.5 rounded-full bg-red-400';
+    statusText.textContent = wa.status === 'PAUSED' ? 'Bot en Pausa (Modo Seguro)' : (wa.status === 'CONFLICT' ? 'Conflicto de Sesión' : 'Restringido Temporalmente');
+
+    connectedView.classList.add('hidden');
+    qrView.classList.add('hidden');
+    connectingView.classList.remove('hidden');
+    if (pairingBox) pairingBox.classList.remove('hidden');
+    if (spinnerIcon) spinnerIcon.className = 'inline-block text-amber-500 text-xl mb-1';
+    if (connectingText) connectingText.textContent = wa.status === 'PAUSED' ? 'Bot pausado. Usa Link Auto-Agendar o WA Manual.' : 'Reconexión detenida para proteger tu número.';
   } else {
     // CONNECTING o DISCONNECTED
     badge.className = 'flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-300 border border-blue-500/40';
@@ -213,6 +258,9 @@ function updateWhatsAppUI(wa) {
     connectedView.classList.add('hidden');
     qrView.classList.add('hidden');
     connectingView.classList.remove('hidden');
+    if (pairingBox) pairingBox.classList.remove('hidden');
+    if (spinnerIcon) spinnerIcon.className = 'inline-block animate-spin text-blue-600 text-xl mb-1';
+    if (connectingText) connectingText.textContent = wa.status === 'CONNECTING' ? 'Generando código QR...' : 'Desconectado (Listo para vincular)';
   }
 }
 
@@ -478,11 +526,12 @@ function renderAppointmentsTable(appointments) {
           ${notifiedBadge}
         </td>
 
-        <td class="py-3.5 px-4 text-right space-x-1.5">
+        <td class="py-3.5 px-4 text-right space-x-1">
+          ${apt.wa_link ? `<a href="${apt.wa_link}" target="_blank" rel="noopener noreferrer" title="Enviar ticket manualmente por WhatsApp Web/App (0% riesgo de bloqueo)" class="inline-block p-1.5 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition"><i class="fa-brands fa-whatsapp"></i></a>` : ''}
           <button onclick="openEditModal(${apt.id})" title="Editar / Reprogramar cita" class="p-1.5 text-blue-600 hover:bg-blue-100 rounded-lg transition">
             <i class="fa-solid fa-pen-to-square"></i>
           </button>
-          <button onclick="resendNotification(${apt.id})" title="Reenviar ticket por WhatsApp" class="p-1.5 text-emerald-600 hover:bg-emerald-100 rounded-lg transition">
+          <button onclick="resendNotification(${apt.id})" title="Reenviar ticket automático por Bot" class="p-1.5 text-emerald-600 hover:bg-emerald-100 rounded-lg transition">
             <i class="fa-solid fa-paper-plane"></i>
           </button>
           <button onclick="cancelAppointment(${apt.id})" title="Cancelar cita y liberar cupo" class="p-1.5 text-red-500 hover:bg-red-100 rounded-lg transition">
@@ -527,6 +576,76 @@ function setupEventListeners() {
     fetchStats();
     showToast('Datos actualizados', 'info');
   });
+
+  // Copiar Link Público de Auto-Agendamiento (/agendar)
+  const btnCopyPublic = document.getElementById('btnCopyPublicLink');
+  if (btnCopyPublic) {
+    btnCopyPublic.addEventListener('click', () => {
+      const publicUrl = `${window.location.origin}/agendar`;
+      navigator.clipboard.writeText(publicUrl).then(() => {
+        showToast(`🔗 Link copiado: ${publicUrl} (Compártelo a candidatos sin riesgo de bloqueo)`, 'success');
+      }).catch(() => {
+        window.open('/agendar', '_blank');
+      });
+    });
+  }
+
+  // Pausar / Reanudar Bot de WhatsApp (Modo Seguro)
+  const btnPauseWa = document.getElementById('btnTogglePauseWa');
+  if (btnPauseWa) {
+    btnPauseWa.addEventListener('click', async () => {
+      const nextPaused = !(state.whatsapp && state.whatsapp.paused);
+      try {
+        const res = await fetch('/api/whatsapp/pause', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ paused: nextPaused })
+        });
+        const data = await res.json();
+        if (data.success) {
+          updateWhatsAppUI(data.whatsapp);
+          showToast(data.message, nextPaused ? 'warning' : 'success');
+        }
+      } catch (e) {
+        showToast('Error cambiando modo de pausa de WhatsApp', 'error');
+      }
+    });
+  }
+
+  // Solicitar Código de Vinculación de 8 Dígitos (Pairing Code)
+  const btnPairing = document.getElementById('btnGetPairingCode');
+  if (btnPairing) {
+    btnPairing.addEventListener('click', async () => {
+      const phoneInput = document.getElementById('inputPairingPhone');
+      const phone = phoneInput ? phoneInput.value.trim() : '';
+      if (!phone) {
+        showToast('Ingresa el número de WhatsApp (ej: 50575534509) para generar el código de 8 dígitos', 'warning');
+        return;
+      }
+      btnPairing.disabled = true;
+      btnPairing.textContent = '...';
+      try {
+        const res = await fetch('/api/whatsapp/pairing-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone_number: phone })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.error || 'Error solicitando código');
+        const display = document.getElementById('pairingCodeDisplay');
+        if (display) {
+          display.textContent = `CÓDIGO: ${data.pairingCode}`;
+          display.classList.remove('hidden');
+        }
+        showToast(data.message, 'success');
+      } catch (err) {
+        showToast(`Error: ${err.message}`, 'error');
+      } finally {
+        btnPairing.disabled = false;
+        btnPairing.textContent = 'Código 8 Dígitos';
+      }
+    });
+  }
 
   // Reiniciar WhatsApp
   document.getElementById('btnRestartWa').addEventListener('click', async () => {

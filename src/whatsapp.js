@@ -1,10 +1,12 @@
 const {
   default: makeWASocket,
   useMultiFileAuthState,
+  initAuthCreds,
   DisconnectReason,
   fetchLatestBaileysVersion,
   jidNormalizedUser,
-  isLidUser
+  isLidUser,
+  Browsers
 } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const QRCode = require('qrcode');
@@ -19,13 +21,22 @@ const MONTHS_ES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio
 class WhatsAppService {
   constructor() {
     this.sock = null;
-    this.status = 'DISCONNECTED'; // DISCONNECTED, QR_READY, CONNECTING, CONNECTED
+    this.status = 'DISCONNECTED'; // DISCONNECTED, QR_READY, CONNECTING, CONNECTED, PAUSED, CONFLICT, RESTRICTED
     this.qrDataUrl = null;
     this.qrRaw = null;
+    this.pairingCode = null;
     this.connectionInfo = null;
+    this.lastDisconnectReason = null;
+    this.paused = false;
+    this.needsFreshRegistration = false;
     this.listeners = new Set();
     this.reconnectAttempts = 0;
     this.isReconnecting = false;
+    this.reconnectTimer = null;
+    this.sendQueue = Promise.resolve();
+    this.lastSentAt = 0;
+    this.recentIncoming = new Map();
+    this.lastMsgKeys = new Map();
   }
 
   // Suscribirse a cambios de estado o eventos
@@ -48,18 +59,117 @@ class WhatsAppService {
     return {
       status: this.status,
       qrDataUrl: this.qrDataUrl,
-      connectionInfo: this.connectionInfo
+      pairingCode: this.pairingCode,
+      connectionInfo: this.connectionInfo,
+      paused: this.paused,
+      lastDisconnectReason: this.lastDisconnectReason,
+      antiBanActive: true
     };
   }
 
+  clearReconnectTimer() {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+    this.isReconnecting = false;
+  }
+
+  // Pausar o reanudar el bot para evitar bloqueos o responder manualmente
+  async setPaused(paused) {
+    this.paused = Boolean(paused);
+    this.clearReconnectTimer();
+    if (this.paused) {
+      await this.disconnect();
+      this.status = 'PAUSED';
+      this.lastDisconnectReason = 'Bot en pausa manual (Modo Seguro Anti-Bloqueo activo).';
+      this.emitEvent('status_change', this.getStatus());
+    } else {
+      this.lastDisconnectReason = null;
+      this.reconnectAttempts = 0;
+      await this.start();
+    }
+    return this.getStatus();
+  }
+
+  // Solicitar código de vinculación de 8 dígitos por número telefónico (alternativa segura al QR)
+  async requestPairingCode(phoneNumber) {
+    const digits = CONFIG.normalizePhone(phoneNumber);
+    if (!digits || digits.length < 8 || digits.length > 15) {
+      throw new Error('Ingrese un número de teléfono válido (ej: 50575534509).');
+    }
+    if (this.status === 'CONNECTED') {
+      throw new Error('WhatsApp ya se encuentra conectado y vinculado.');
+    }
+
+    this.paused = false;
+    this.clearReconnectTimer();
+
+    // Si hay un socket simulado en pruebas (sin WebSocket real), usarlo directamente
+    const isMockSocket = this.sock && typeof this.sock.requestPairingCode === 'function' && !this.sock.ws;
+    if (!isMockSocket) {
+      const hasStaleLoginCreds = Boolean(this.sock?.authState?.creds?.me);
+      if (!this.sock || this.status !== 'QR_READY' || hasStaleLoginCreds) {
+        await this.start({ freshRegistration: true });
+      }
+      // Esperar a que el handshake de registro esté listo (evento qr o estado QR_READY)
+      if (this.status !== 'QR_READY') {
+        await new Promise((resolve) => {
+          const timeout = setTimeout(() => {
+            off();
+            resolve();
+          }, 6000);
+          const off = this.onEvent((type, data) => {
+            if (type === 'qr' || (type === 'status_change' && (data?.status === 'QR_READY' || data?.status === 'DISCONNECTED'))) {
+              clearTimeout(timeout);
+              off();
+              resolve();
+            }
+          });
+        });
+      }
+    }
+
+    if (!this.sock || typeof this.sock.requestPairingCode !== 'function') {
+      throw new Error('El socket de WhatsApp aún se está inicializando. Intente de nuevo en 3 segundos.');
+    }
+    const rawCode = await this.sock.requestPairingCode(digits);
+    const formatted = rawCode && rawCode.length === 8 ? `${rawCode.slice(0, 4)}-${rawCode.slice(4)}` : rawCode;
+    this.pairingCode = formatted;
+    this.emitEvent('pairing_code', { pairingCode: formatted, phoneNumber: digits });
+    this.emitEvent('status_change', this.getStatus());
+    return formatted;
+  }
+
   // Inicializar socket de Baileys
-  async start() {
+  async start(options = {}) {
+    this.clearReconnectTimer();
+    if (this.paused) {
+      this.status = 'PAUSED';
+      this.emitEvent('status_change', this.getStatus());
+      return;
+    }
     try {
+      if (this.sock) {
+        const prevSock = this.sock;
+        this.sock = null;
+        try { await prevSock.end(); } catch {}
+      }
+
       if (!fs.existsSync(CONFIG.AUTH_DIR)) {
         fs.mkdirSync(CONFIG.AUTH_DIR, { recursive: true });
       }
 
       const { state, saveCreds } = await useMultiFileAuthState(CONFIG.AUTH_DIR);
+      const useFresh = Boolean(options.freshRegistration || this.needsFreshRegistration);
+      if (useFresh && typeof initAuthCreds === 'function') {
+        state.creds = initAuthCreds();
+        this.needsFreshRegistration = false;
+      } else if (state.creds?.me && !state.creds?.account) {
+        // Credencial incompleta de un intento previo de pairingCode sin concluir
+        delete state.creds.me;
+      }
+
       let version;
       try {
         const v = await fetchLatestBaileysVersion();
@@ -73,24 +183,32 @@ class WhatsAppService {
 
       const logger = pino({ level: 'silent' });
 
-      this.sock = makeWASocket({
+      const sock = makeWASocket({
         version,
         auth: state,
         logger,
         printQRInTerminal: false,
-        // Historial completo: al vincular el QR, WhatsApp envía los chats y así se recuperan las citas ya confirmadas
-        syncFullHistory: true,
-        browser: ['AlfaCredit S.A.', 'Chrome', '120.0.0'],
+        // Anti-Ban: desactivar descarga masiva de historial y presencia 24/7, usar firma estándar de navegador
+        syncFullHistory: false,
+        markOnlineOnConnect: false,
+        generateHighQualityLinkPreview: false,
+        browser: Browsers && typeof Browsers.ubuntu === 'function' ? Browsers.ubuntu('Chrome') : ['Ubuntu', 'Chrome', '20.0.04'],
         connectTimeoutMs: 60000,
-        keepAliveIntervalMs: 25000,
+        keepAliveIntervalMs: 30000,
         defaultQueryTimeoutMs: 60000
       });
+      this.sock = sock;
 
-      // Guardar credenciales al actualizarse
-      this.sock.ev.on('creds.update', saveCreds);
+      // Guardar credenciales al actualizarse (solo si tienen identidad me para no corromper creds.json en disco)
+      sock.ev.on('creds.update', () => {
+        if (state.creds?.me?.id) {
+          saveCreds();
+        }
+      });
 
       // Evento de conexión
-      this.sock.ev.on('connection.update', async (update) => {
+      sock.ev.on('connection.update', async (update) => {
+        if (this.sock !== sock) return;
         const { connection, lastDisconnect, qr } = update;
 
         if (qr) {
@@ -111,31 +229,80 @@ class WhatsAppService {
 
         if (connection === 'close') {
           const statusCode = lastDisconnect?.error?.output?.statusCode;
-          const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
-          this.status = 'DISCONNECTED';
+          this.sock = null;
           this.qrDataUrl = null;
           this.connectionInfo = null;
-          this.emitEvent('status_change', this.getStatus());
 
-          if (shouldReconnect) {
+          if (this.paused) {
+            this.status = 'PAUSED';
+            this.emitEvent('status_change', this.getStatus());
+            return;
+          }
+
+          // 0) Reinicio requerido por WhatsApp tras emparejar exitosamente (515 restartRequired)
+          if (statusCode === DisconnectReason.restartRequired || statusCode === 515) {
+            this.reconnectAttempts = 0;
+            this.needsFreshRegistration = false;
+            await this.start();
+            return;
+          }
+
+          // 1) Conflicto de sesión (440): otra instancia (ej. PC local vs Render) tiene abierta la misma sesión.
+          // NUNCA reconectar en bucle porque la guerra de reconexiones provoca el bloqueo inmediato del número.
+          if (statusCode === DisconnectReason.connectionReplaced || statusCode === 440) {
+            this.status = 'CONFLICT';
+            this.pairingCode = null;
+            this.lastDisconnectReason = 'Sesión abierta en otro servidor o PC al mismo tiempo (Código 440). Reconexión detenida automáticamente para evitar bloqueo de WhatsApp.';
+            console.warn('⚠️ [Anti-Ban]', this.lastDisconnectReason);
+            this.emitEvent('status_change', this.getStatus());
+            return;
+          }
+
+          // 2) Cuenta restringida o bloqueada temporalmente por WhatsApp (403 / 405)
+          if (statusCode === 403 || statusCode === 405) {
+            this.status = 'RESTRICTED';
+            this.pairingCode = null;
+            this.lastDisconnectReason = `WhatsApp restringió temporalmente la conexión (Código ${statusCode}). Se detuvo el bot para proteger el número. Usa el enlace web /agendar mientras se restablece.`;
+            console.warn('🛑 [Anti-Ban]', this.lastDisconnectReason);
+            this.emitEvent('status_change', this.getStatus());
+            return;
+          }
+
+          // 3) Sesión cerrada desde el teléfono (401 loggedOut)
+          if (statusCode === DisconnectReason.loggedOut || statusCode === 401) {
+            this.status = 'DISCONNECTED';
+            this.pairingCode = null;
+            this.needsFreshRegistration = true;
+            this.lastDisconnectReason = 'Sesión cerrada o desvinculada desde el teléfono. Haz clic en Reiniciar o vincula con Código de 8 dígitos cuando estés listo.';
+            console.log('ℹ️ [WhatsApp]', this.lastDisconnectReason);
+            this.emitEvent('status_change', this.getStatus());
+            return;
+          }
+
+          // 4) Desconexión de red normal: reconectar con backoff exponencial + jitter hasta el límite seguro
+          const maxAttempts = CONFIG.ANTI_BAN?.MAX_RECONNECT_ATTEMPTS || 5;
+          if (this.reconnectAttempts < maxAttempts) {
+            this.status = 'DISCONNECTED';
+            this.emitEvent('status_change', this.getStatus());
             this.reconnect();
           } else {
-            console.log('Sesión cerrada permanentemente en WhatsApp. Limpiando credenciales...');
-            try {
-              fs.rmSync(CONFIG.AUTH_DIR, { recursive: true, force: true });
-            } catch {}
-            this.reconnect();
+            this.status = 'DISCONNECTED';
+            this.lastDisconnectReason = `Se alcanzó el límite seguro de ${maxAttempts} intentos de reconexión para proteger la cuenta.`;
+            this.emitEvent('status_change', this.getStatus());
           }
         } else if (connection === 'open') {
           this.status = 'CONNECTED';
           this.qrDataUrl = null;
+          this.pairingCode = null;
+          this.lastDisconnectReason = null;
+          this.needsFreshRegistration = false;
           this.reconnectAttempts = 0;
           this.connectionInfo = {
-            id: this.sock?.user?.id || 'whatsapp_user',
-            name: this.sock?.user?.name || 'AlfaCredit Bot'
+            id: sock?.user?.id || 'whatsapp_user',
+            name: sock?.user?.name || 'AlfaCredit Bot'
           };
           this.emitEvent('status_change', this.getStatus());
-          console.log('✅ Conexión con WhatsApp establecida exitosamente.');
+          console.log('✅ Conexión con WhatsApp establecida exitosamente (Escudo Anti-Bloqueo activo).');
         }
       });
 
@@ -224,19 +391,64 @@ class WhatsAppService {
     }
   }
 
-  // Reintento de conexión
+  // Reintento de conexión con backoff exponencial + jitter aleatorio (Anti-Ban)
   reconnect() {
-    if (this.isReconnecting) return;
+    if (this.isReconnecting || this.paused) return;
     this.isReconnecting = true;
-    const delay = Math.min(30000, 3000 * Math.pow(1.5, this.reconnectAttempts++));
-    setTimeout(async () => {
+    const baseDelay = Math.min(60000, 5000 * Math.pow(1.8, this.reconnectAttempts++));
+    const jitter = Math.floor(Math.random() * 2500);
+    const delay = baseDelay + jitter;
+    this.reconnectTimer = setTimeout(async () => {
+      this.reconnectTimer = null;
       this.isReconnecting = false;
-      await this.start();
+      if (!this.paused) await this.start();
     }, delay);
+  }
+
+  // Cola de envío con espaciado mínimo entre mensajes y simulación humana ("Escribiendo...")
+  enqueueSend(taskFn) {
+    const run = async () => {
+      const minGap = CONFIG.ANTI_BAN?.MIN_SEND_GAP_MS ?? 1400;
+      const elapsed = Date.now() - this.lastSentAt;
+      if (this.lastSentAt > 0 && elapsed < minGap) {
+        const waitMs = (minGap - elapsed) + Math.floor(Math.random() * 450);
+        await new Promise(r => setTimeout(r, waitMs));
+      }
+      const res = await taskFn();
+      this.lastSentAt = Date.now();
+      return res;
+    };
+    this.sendQueue = this.sendQueue.then(run, run);
+    return this.sendQueue;
+  }
+
+  // Simular lectura y escritura humana antes de enviar mensaje por socket real
+  async simulateHumanTyping(jid, text, msgKey = null) {
+    if (!this.sock) return;
+    const minTyping = CONFIG.ANTI_BAN?.MIN_TYPING_MS ?? 1500;
+    const maxTyping = CONFIG.ANTI_BAN?.MAX_TYPING_MS ?? 3500;
+    if (maxTyping <= 0) return;
+
+    try {
+      if (msgKey && typeof this.sock.readMessages === 'function') {
+        await this.sock.readMessages([msgKey]).catch(() => {});
+      }
+      if (typeof this.sock.sendPresenceUpdate === 'function') {
+        await this.sock.sendPresenceUpdate('composing', jid).catch(() => {});
+      }
+      const typingMs = Math.min(maxTyping, Math.max(minTyping, String(text || '').length * 10)) + Math.floor(Math.random() * 500);
+      await new Promise(r => setTimeout(r, typingMs));
+      if (typeof this.sock.sendPresenceUpdate === 'function') {
+        await this.sock.sendPresenceUpdate('paused', jid).catch(() => {});
+      }
+    } catch {}
   }
 
   // Enviar mensaje a un número telefónico o JID
   async sendMessage(destination, text) {
+    if (this.paused) {
+      return { success: false, error: 'El bot de WhatsApp está en Modo Pausa (Anti-Bloqueo)' };
+    }
     if (this.status !== 'CONNECTED' || !this.sock) {
       return { success: false, error: 'WhatsApp no está conectado actualmente' };
     }
@@ -255,10 +467,13 @@ class WhatsAppService {
         targetJid = `${digits}@s.whatsapp.net`;
       }
 
-      console.log(`[WhatsApp] 📤 sendMessage hacia ${targetJid}...`);
-      const result = await this.sock.sendMessage(targetJid, { text });
-      console.log(`[WhatsApp] ✅ sendMessage exitoso a ${targetJid} (ID: ${result?.key?.id})`);
-      return { success: true, messageId: result?.key?.id };
+      return await this.enqueueSend(async () => {
+        await this.simulateHumanTyping(targetJid, text);
+        console.log(`[WhatsApp] 📤 sendMessage hacia ${targetJid}...`);
+        const result = await this.sock.sendMessage(targetJid, { text });
+        console.log(`[WhatsApp] ✅ sendMessage exitoso a ${targetJid} (ID: ${result?.key?.id})`);
+        return { success: true, messageId: result?.key?.id };
+      });
     } catch (err) {
       console.error(`[WhatsApp] ❌ Error enviando mensaje a ${destination}:`, err.message);
       return { success: false, error: err.message };
@@ -306,6 +521,8 @@ class WhatsAppService {
   // Procesamiento del flujo conversacional
   async handleIncomingMessage(msg) {
     try {
+      if (this.paused) return;
+
       const fromJid = msg.key.remoteJid;
       if (!fromJid || fromJid.includes('@g.us') || fromJid.includes('@broadcast') || fromJid.includes('newsletter')) {
         return; // Solo chats individuales
@@ -338,6 +555,19 @@ class WhatsAppService {
       ).trim();
 
       if (!text) return;
+
+      // Anti-Ban: ignorar ráfagas duplicadas idénticas del mismo remitente en ventana corta cuando el socket está activo
+      const now = Date.now();
+      const burstWindow = CONFIG.ANTI_BAN?.DUPLICATE_BURST_MS ?? 4000;
+      if (this.sock && burstWindow > 0) {
+        const prev = this.recentIncoming.get(chatId);
+        if (prev && prev.text === text.toLowerCase() && (now - prev.ts) < burstWindow) {
+          console.log(`[Anti-Ban] ⏳ Ignorando mensaje duplicado en ráfaga de ${replyJid}`);
+          return;
+        }
+        this.recentIncoming.set(chatId, { text: text.toLowerCase(), ts: now });
+      }
+      this.lastMsgKeys.set(replyJid, msg.key);
 
       console.log(`[WhatsApp] 📩 Mensaje entrante de ${replyJid}: "${text}"`);
 
@@ -655,12 +885,15 @@ class WhatsAppService {
   // Finalizar y emitir pase de entrevista
   async finalizeAppointment({ chatId, replyJid, state, candidateName, phoneNumber }) {
     try {
+      const priorAppointment = database.getAppointmentByPhone(phoneNumber) || database.getAppointmentByPhone(chatId);
+
       // Verificar disponibilidad del slot (evitar colisiones concurrentes)
       let finalSlot = state.selected_time;
       let slotNotice = '';
-      if (database.isSlotTaken(state.selected_date, finalSlot)) {
+      if (database.isSlotTaken(state.selected_date, finalSlot, priorAppointment?.id)) {
         const originalSlot12h = scheduler.formatTime12h(finalSlot);
-        finalSlot = scheduler.getNextAvailableSlot(state.selected_date);
+        finalSlot = scheduler.getNextAvailableSlot(state.selected_date) ||
+          (priorAppointment && priorAppointment.date === state.selected_date ? priorAppointment.time_slot : null);
         if (!finalSlot) {
           await this.reply(replyJid, `Lo sentimos, ese turno acaba de ser ocupado y no quedan más cupos en esa fecha. Por favor escribe "REINICIAR" para elegir otra fecha.`);
           return;
@@ -670,7 +903,6 @@ class WhatsAppService {
       }
 
       // Si ya existía una cita activa previa de este mismo postulante, liberarla
-      const priorAppointment = database.getAppointmentByPhone(phoneNumber) || database.getAppointmentByPhone(chatId);
       if (priorAppointment) {
         database.cancelAppointment(priorAppointment.id, 'Reprogramada automáticamente por nueva solicitud vía WhatsApp bot');
       }
@@ -714,8 +946,8 @@ class WhatsAppService {
       await this.reply(replyJid, successMsg);
       database.markNotified(appointment.id);
 
-      // Respaldo inmediato por WhatsApp al Administrador
-      if (CONFIG.ADMIN_PHONE) {
+      // Respaldo inmediato por WhatsApp al Administrador (solo si está explícitamente habilitado, para evitar bloqueos por spam)
+      if (CONFIG.ADMIN_PHONE && CONFIG.ENABLE_ADMIN_WA_BACKUP) {
         try {
           const adminNotice =
             `💾 *RESPALDO AUTOMÁTICO DE CITA - ALFACREDIT S.A.*\n` +
@@ -803,7 +1035,7 @@ class WhatsAppService {
 
     if (recovered.length) {
       console.log(`♻️ [Recuperación] ${recovered.length} cita(s) restauradas desde el historial de WhatsApp.`);
-      if (CONFIG.ADMIN_PHONE) {
+      if (CONFIG.ADMIN_PHONE && CONFIG.ENABLE_ADMIN_WA_BACKUP) {
         this.sendMessage(CONFIG.ADMIN_PHONE,
           `♻️ *RECUPERACIÓN AUTOMÁTICA - ${CONFIG.COMPANY_NAME}*\n\n` +
           `Se restauraron *${recovered.length}* cita(s) desde el historial de WhatsApp:\n\n` +
@@ -833,10 +1065,15 @@ class WhatsAppService {
       console.warn('[WhatsApp] No hay socket activo para responder.');
       return;
     }
+    const msgKey = this.lastMsgKeys.get(jid) || null;
+    this.lastMsgKeys.delete(jid);
     try {
-      console.log(`[WhatsApp] 📤 Respondiendo a ${jid}...`);
-      const res = await this.sock.sendMessage(jid, { text });
-      console.log(`[WhatsApp] ✅ Respuesta enviada exitosamente a ${jid} (msgId: ${res?.key?.id})`);
+      await this.enqueueSend(async () => {
+        await this.simulateHumanTyping(jid, text, msgKey);
+        console.log(`[WhatsApp] 📤 Respondiendo a ${jid}...`);
+        const res = await this.sock.sendMessage(jid, { text });
+        console.log(`[WhatsApp] ✅ Respuesta enviada exitosamente a ${jid} (msgId: ${res?.key?.id})`);
+      });
     } catch (e) {
       console.error(`[WhatsApp] ❌ Error enviando respuesta a ${jid}:`, e.message);
     }
@@ -844,14 +1081,18 @@ class WhatsAppService {
 
   // Cerrar conexión
   async disconnect() {
+    this.clearReconnectTimer();
     if (this.sock) {
-      try {
-        await this.sock.end();
-      } catch {}
+      const prevSock = this.sock;
       this.sock = null;
+      try {
+        await prevSock.end();
+      } catch {}
     }
-    this.status = 'DISCONNECTED';
+    this.status = this.paused ? 'PAUSED' : 'DISCONNECTED';
     this.qrDataUrl = null;
+    this.pairingCode = null;
+    this.connectionInfo = null;
     this.emitEvent('status_change', this.getStatus());
   }
 }
@@ -859,3 +1100,4 @@ class WhatsAppService {
 // Singleton
 const whatsappService = new WhatsAppService();
 module.exports = whatsappService;
+

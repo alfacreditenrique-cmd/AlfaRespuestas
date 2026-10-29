@@ -41,6 +41,12 @@
           <span id="waStatusText">Iniciando WhatsApp...</span>
         </div>
 
+        <!-- Botón Copiar Enlace Público de Auto-Agendamiento (Plan B sin riesgo de bloqueo) -->
+        <button id="btnCopyPublicLink" class="inline-flex items-center space-x-1.5 px-3 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-semibold text-xs sm:text-sm transition shadow-sm hover:shadow" title="Copiar link web para que los candidatos agenden solos sin usar el bot de WhatsApp">
+          <i class="fa-solid fa-link"></i>
+          <span class="hidden sm:inline">Link Auto-Agendar</span>
+        </button>
+
         <!-- Botón Descargar Respaldo -->
         <a href="/api/backup/download" id="btnDownloadBackup" class="inline-flex items-center space-x-1.5 px-3 py-2 rounded-lg bg-indigo-700 hover:bg-indigo-600 text-white font-medium text-xs sm:text-sm transition shadow-sm hover:shadow" title="Descargar copia de seguridad SQLite en caliente">
           <i class="fa-solid fa-download"></i>
@@ -135,46 +141,61 @@
         </div>
       </div>
 
-      <!-- TARJETA CONEXIÓN WHATSAPP CON QR -->
-      <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
+      <!-- TARJETA CONEXIÓN WHATSAPP CON ESCUDO ANTI-BLOQUEO Y CÓDIGO DE 8 DÍGITOS -->
+      <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between space-y-2">
         <div class="flex justify-between items-center">
-          <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+          <h3 class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
             <i class="fa-brands fa-whatsapp text-emerald-500 text-lg"></i>
-            WhatsApp Bot
+            <span>WhatsApp Bot</span>
+            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800" title="Simulación de escritura humana, cola de envío y protección contra sesiones duplicadas">🛡️ Anti-Ban</span>
           </h3>
-          <button id="btnRestartWa" title="Reiniciar sesión WhatsApp" class="text-xs text-slate-400 hover:text-slate-600 p-1">
-            <i class="fa-solid fa-rotate-right"></i>
-          </button>
+          <div class="flex items-center space-x-1">
+            <button id="btnTogglePauseWa" title="Pausar/Reanudar Bot (Modo Manual Seguro)" class="text-[11px] font-semibold px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
+              <i class="fa-solid fa-pause mr-0.5"></i>Pausar
+            </button>
+            <button id="btnRestartWa" title="Reiniciar sesión WhatsApp" class="text-xs text-slate-400 hover:text-slate-600 p-1">
+              <i class="fa-solid fa-rotate-right"></i>
+            </button>
+          </div>
         </div>
 
+        <!-- Alerta de conflicto o restricción -->
+        <div id="waAlertReason" class="hidden p-2 rounded-lg bg-amber-50 border border-amber-200 text-[11px] text-amber-800 font-medium leading-tight"></div>
+
         <!-- Vista cuando está conectado -->
-        <div id="waConnectedView" class="hidden my-3 text-center py-4 bg-emerald-50/50 rounded-xl border border-emerald-100">
-          <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2 text-xl">
+        <div id="waConnectedView" class="hidden my-2 text-center py-3 bg-emerald-50/50 rounded-xl border border-emerald-100">
+          <div class="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-1.5 text-lg">
             <i class="fa-solid fa-check"></i>
           </div>
-          <p class="text-xs font-bold text-emerald-800">Bot Vinculado y Activo</p>
+          <p class="text-xs font-bold text-emerald-800">Bot Vinculado y Protegido</p>
           <p id="waConnectedAccount" class="text-xs text-slate-600 mt-0.5">Listo para agendar</p>
         </div>
 
         <!-- Vista cuando muestra QR -->
-        <div id="waQrView" class="my-2 text-center">
+        <div id="waQrView" class="my-1 text-center">
           <div class="relative inline-block p-1 bg-white border border-slate-200 rounded-lg shadow-sm">
-            <img id="waQrImage" class="w-28 h-28 mx-auto" alt="Escanea QR de WhatsApp" src="" />
+            <img id="waQrImage" class="w-24 h-24 mx-auto" alt="Escanea QR de WhatsApp" src="" />
           </div>
-          <p class="text-[11px] font-semibold text-slate-600 mt-1">Escanea con tu WhatsApp</p>
-          <p class="text-[10px] text-slate-400">Dispositivos vinculados > Vincular un dispositivo</p>
+          <p class="text-[11px] font-semibold text-slate-600 mt-1">Escanea QR o vincula con código:</p>
         </div>
 
         <!-- Vista cuando está desconectado / cargando -->
-        <div id="waConnectingView" class="my-3 text-center py-5">
-          <div class="inline-block animate-spin text-blue-600 text-2xl mb-1">
+        <div id="waConnectingView" class="my-2 text-center py-3">
+          <div class="inline-block animate-spin text-blue-600 text-xl mb-1" id="waSpinnerIcon">
             <i class="fa-solid fa-circle-notch"></i>
           </div>
-          <p class="text-xs text-slate-500 font-medium">Generando código QR...</p>
+          <p id="waConnectingText" class="text-xs text-slate-500 font-medium">Generando código QR...</p>
         </div>
 
-        <div class="text-[11px] text-slate-400 text-center border-t border-slate-100 pt-2">
-          Persistencia en <code>./auth_info_baileys</code>
+        <!-- Vinculación por Código de 8 Dígitos (Pairing Code - Más seguro contra bloqueos) -->
+        <div id="waPairingBox" class="pt-2 border-t border-slate-100 space-y-1.5">
+          <div class="flex items-center space-x-1">
+            <input type="text" id="inputPairingPhone" placeholder="Tel: 50575534509" class="w-full px-2 py-1 text-[11px] border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500" />
+            <button id="btnGetPairingCode" type="button" class="px-2 py-1 text-[11px] font-bold bg-blue-600 hover:bg-blue-700 text-white rounded whitespace-nowrap transition" title="Vincular con código numérico de 8 dígitos en vez de QR">
+              Código 8 Dígitos
+            </button>
+          </div>
+          <div id="pairingCodeDisplay" class="hidden text-center py-1 px-2 bg-slate-900 text-emerald-400 font-mono font-black text-sm tracking-widest rounded border border-slate-700"></div>
         </div>
       </div>
 

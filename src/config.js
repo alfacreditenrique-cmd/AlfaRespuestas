@@ -13,6 +13,17 @@ const CONFIG = {
 
   // Número de WhatsApp del Administrador para recibir respaldo automático de cada cita
   ADMIN_PHONE: process.env.ADMIN_PHONE || '50575534509',
+  // Desactivado por defecto para evitar bloqueos de WhatsApp por exceso de mensajes automáticos al mismo número
+  ENABLE_ADMIN_WA_BACKUP: process.env.ENABLE_ADMIN_WA_BACKUP === 'true',
+
+  // Configuración del Escudo Anti-Bloqueo (Anti-Ban) para WhatsApp
+  ANTI_BAN: {
+    MIN_TYPING_MS: Number(process.env.WA_MIN_TYPING_MS || 1500),
+    MAX_TYPING_MS: Number(process.env.WA_MAX_TYPING_MS || 3500),
+    MIN_SEND_GAP_MS: Number(process.env.WA_MIN_SEND_GAP_MS || 1400),
+    DUPLICATE_BURST_MS: Number(process.env.WA_DUPLICATE_BURST_MS || 4000),
+    MAX_RECONNECT_ATTEMPTS: Number(process.env.WA_MAX_RECONNECT_ATTEMPTS || 5)
+  },
 
   // Call Center para redirección de consultas de créditos/préstamos
   CALL_CENTER_PHONE: '50558096263',

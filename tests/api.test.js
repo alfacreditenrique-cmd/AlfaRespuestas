@@ -345,6 +345,124 @@ test('API: Citas existentes con @s.whatsapp.net retienen sus números telefónic
   assert.equal(singleRes.status, 200);
   const singleData = await singleRes.json();
   assert.equal(singleData.appointment.phone_number, '50587654321');
+  assert.ok(singleData.appointment.wa_link && singleData.appointment.wa_link.startsWith('https://wa.me/50587654321?text='), 'Debe incluir wa_link directo con ticket pre-cargado');
+});
+
+test('API Plan B Anti-Bloqueo: GET /agendar sirve portal público y POST /api/public/agendar agenda y reprograma sin requerir bot de WhatsApp', async () => {
+  const pageRes = await fetch(`${baseUrl}/agendar`);
+  assert.equal(pageRes.status, 200);
+  const pageHtml = await pageRes.text();
+  assert.ok(pageHtml.includes('Reserva tu Turno de Entrevista'));
+
+  // 1. Validación de nombre inválido
+  const badNameRes = await fetch(`${baseUrl}/api/public/agendar`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      candidate_name: 'Hola',
+      phone_number: '88776655',
+      position: 'Oficial de Crédito',
+      date: '2025-11-04'
+    })
+  });
+  assert.equal(badNameRes.status, 400);
+
+  // 2. Registro exitoso por portal web
+  const bookRes = await fetch(`${baseUrl}/api/public/agendar`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      candidate_name: 'Lucía Fernanda Rivas',
+      phone_number: '88442211',
+      position: 'Oficial de Crédito',
+      date: '2025-11-04'
+    })
+  });
+  assert.equal(bookRes.status, 201);
+  const bookData = await bookRes.json();
+  assert.equal(bookData.success, true);
+  assert.equal(bookData.appointment.candidate_name, 'Lucía Fernanda Rivas');
+  assert.equal(bookData.appointment.phone_number, '50588442211');
+  assert.equal(bookData.appointment.time_slot, '08:30');
+  assert.ok(bookData.ticket.includes('ALFACREDIT S.A. - CITA CONFIRMADA'));
+
+  // 3. Si vuelve a agendar en la MISMA fecha (cambiando de plaza), conserva su turno 08:30 sin correrlo a 08:45
+  const sameDateRes = await fetch(`${baseUrl}/api/public/agendar`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      candidate_name: 'Lucía Fernanda Rivas',
+      phone_number: '88442211',
+      position: 'Desembolsador de Crédito',
+      date: '2025-11-04'
+    })
+  });
+  assert.equal(sameDateRes.status, 201);
+  const sameDateData = await sameDateRes.json();
+  assert.equal(sameDateData.appointment.time_slot, '08:30', 'Al reprogramar en la misma fecha debe conservar el primer turno libre 08:30');
+  assert.equal(sameDateData.appointment.position, 'Desembolsador de Crédito');
+
+  // 4. Si el mismo candidato vuelve a agendar en otra fecha desde /agendar, libera el turno anterior
+  const rebookRes = await fetch(`${baseUrl}/api/public/agendar`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      candidate_name: 'Lucía Fernanda Rivas',
+      phone_number: '88442211',
+      position: 'Promotor de Crédito',
+      date: '2025-11-05'
+    })
+  });
+  assert.equal(rebookRes.status, 201);
+  assert.equal(database.isSlotTaken('2025-11-04', '08:30'), false, 'El turno anterior debe haberse liberado');
+});
+
+test('API Escudo Anti-Ban: POST /api/whatsapp/pause y POST /api/whatsapp/pairing-code', async () => {
+  const whatsappService = require('../src/whatsapp');
+
+  // 1. Activar modo pausa
+  const pauseRes = await fetch(`${baseUrl}/api/whatsapp/pause`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ paused: true })
+  });
+  assert.equal(pauseRes.status, 200);
+  const pauseData = await pauseRes.json();
+  assert.equal(pauseData.success, true);
+  assert.equal(pauseData.paused, true);
+  assert.equal(pauseData.whatsapp.status, 'PAUSED');
+
+  // 2. Solicitar código de 8 dígitos con teléfono inválido -> 400
+  const badPairRes = await fetch(`${baseUrl}/api/whatsapp/pairing-code`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone_number: '123' })
+  });
+  assert.equal(badPairRes.status, 400);
+
+  // 3. Solicitar código de 8 dígitos con socket simulado -> devuelve formato XXXX-XXXX
+  whatsappService.sock = {
+    requestPairingCode: async (digits) => {
+      assert.equal(digits, '50575534509');
+      return 'ABCD1234';
+    }
+  };
+  try {
+    const pairRes = await fetch(`${baseUrl}/api/whatsapp/pairing-code`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone_number: '75534509' })
+    });
+    assert.equal(pairRes.status, 200);
+    const pairData = await pairRes.json();
+    assert.equal(pairData.success, true);
+    assert.equal(pairData.pairingCode, 'ABCD-1234');
+    assert.equal(whatsappService.paused, false);
+  } finally {
+    whatsappService.sock = null;
+    whatsappService.pairingCode = null;
+    whatsappService.status = 'DISCONNECTED';
+  }
 });
 
 

@@ -1,0 +1,81 @@
+{
+  "colorGroups": [
+    {
+      "query": "tag:#community/WhatsApp_Anti-Ban__Pairing_Engine",
+      "color": {
+        "a": 1,
+        "rgb": 5142951
+      }
+    },
+    {
+      "query": "tag:#community/Express_REST_API__Public_Booking",
+      "color": {
+        "a": 1,
+        "rgb": 15896107
+      }
+    },
+    {
+      "query": "tag:#community/Baileys_Socket__Session_Auth",
+      "color": {
+        "a": 1,
+        "rgb": 14767961
+      }
+    },
+    {
+      "query": "tag:#community/SQLite_Database__LID_Phone_Mapping",
+      "color": {
+        "a": 1,
+        "rgb": 7780274
+      }
+    },
+    {
+      "query": "tag:#community/Appointment_Modals__Slot_Picker",
+      "color": {
+        "a": 1,
+        "rgb": 5873999
+      }
+    },
+    {
+      "query": "tag:#community/Dashboard_Table__Stats_Renderer",
+      "color": {
+        "a": 1,
+        "rgb": 15583560
+      }
+    },
+    {
+      "query": "tag:#community/WebSocket_Live_Sync_Client",
+      "color": {
+        "a": 1,
+        "rgb": 11565729
+      }
+    },
+    {
+      "query": "tag:#community/CRUD__Notification_Actions",
+      "color": {
+        "a": 1,
+        "rgb": 16752039
+      }
+    },
+    {
+      "query": "tag:#community/Core_Utilities",
+      "color": {
+        "a": 1,
+        "rgb": 10253663
+      }
+    },
+    {
+      "query": "tag:#community/Interview_Quota__Ticket_Scheduler",
+      "color": {
+        "a": 1,
+        "rgb": 12234924
+      }
+    },
+    {
+      "query": "tag:#community/Dynamic_Dates_Manager",
+      "color": {
+        "a": 1,
+        "rgb": 5142951
+      }
+    }
+  ]
+}
