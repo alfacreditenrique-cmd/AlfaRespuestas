@@ -14,6 +14,10 @@ const CONFIG = {
   // Número de WhatsApp del Administrador para recibir respaldo automático de cada cita
   ADMIN_PHONE: process.env.ADMIN_PHONE || '50575534509',
 
+  // Call Center para redirección de consultas de créditos/préstamos
+  CALL_CENTER_PHONE: '50558096263',
+  CALL_CENTER_URL: 'https://wa.me/50558096263',
+
   // Plazas disponibles
   POSITIONS: [
     { id: '1', title: 'Oficial de Crédito', code: 'OFICIAL' },
@@ -23,8 +27,8 @@ const CONFIG = {
 
   // Fechas de entrevistas permitidas
   DATES: [
-    { id: '2025-11-04', label: 'Martes 4 de Noviembre', short: '04/11' },
-    { id: '2025-11-05', label: 'Miércoles 5 de Noviembre', short: '05/11' }
+    { id: '2025-11-04', label: 'Miércoles 4 de Noviembre', short: '04/11' },
+    { id: '2025-11-05', label: 'Jueves 5 de Noviembre', short: '05/11' }
   ],
 
   // Turnos en bloques de 15 minutos:

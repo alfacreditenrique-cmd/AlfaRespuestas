@@ -15,6 +15,7 @@ const db = new DatabaseSync(CONFIG.DB_PATH);
 db.exec(`
   PRAGMA journal_mode = WAL;
   PRAGMA synchronous = NORMAL;
+  PRAGMA busy_timeout = 10000;
   PRAGMA foreign_keys = ON;
 
   CREATE TABLE IF NOT EXISTS appointments (
@@ -61,7 +62,45 @@ db.exec(`
     is_active INTEGER DEFAULT 1,
     created_at TEXT NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS phone_mappings (
+    lid TEXT PRIMARY KEY,
+    phone_number TEXT NOT NULL,
+    source TEXT DEFAULT 'whatsapp',
+    updated_at TEXT NOT NULL
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_phone_mappings_phone ON phone_mappings(phone_number);
 `);
+
+// Mapeos canónicos conocidos de postulantes históricos (LID <-> Teléfono real)
+const KNOWN_LID_PHONE_MAPPINGS = {
+  '50930124898441': '50575534505',
+  '110582757892269': '50582950033',
+  '33105826062589': '50582056966',
+  '160095442850025': '50584130501',
+  '21530956296243': '50578007038',
+  '44101378519253': '50557376270',
+  '90259157213350': '50582871492',
+  '161435455905909': '50588370405',
+  '254168094789736': '50558405580',
+  '84658435919913': '50588311675',
+  '251982140993783': '50585136655', // Esmeyling Martínez
+  '13744147030196': '50587099189',  // Daniela Kassandra Molina Castro
+  '57256796233770': '50586233770',   // Juan Alberto Chavarría aguirre
+  '153725536583712': '50587411241',  // Napoleon García vivas
+  '278490125480035': '50588990011',  // Ronald Espinoza
+  '87424344531017': '50589436869',   // Ronald Espinoza (LID activo)
+  '267417582313521': '50582667129',  // Kenia Gissel valle Mendez
+  '262237986025598': '50558328676',  // José Miguel Baldizon Galeano
+  '155473739288712': '50578358674',  // Karina Zambrana
+  '142679233003740': '50587443032',  // Darwin Fabian Potosme Montalvan
+  '80079849816117': '50589246391',   // Karen castillo
+  '123656420245589': '50588272121',  // Julio Cesar Hernandez Perez
+  '92457844879515': '50582066598',   // Junior jose chavarria matus
+  '212803298263138': '50586069625',  // Eden Jacinto Lopez Ortega.
+  '237602456256678': '50557196182'   // Steven Jesus Zelaya
+};
 
 // Inicializar directorio de backups
 const backupDir = CONFIG.BACKUP_DIR || path.join(dbDir, 'backups');
@@ -69,7 +108,7 @@ if (!fs.existsSync(backupDir)) {
   fs.mkdirSync(backupDir, { recursive: true });
 }
 
-// Inicializar fechas por defecto si la tabla está vacía
+// Inicializar fechas por defecto y corregir etiquetas de días (Miércoles 4 / Jueves 5)
 try {
   const dateCount = db.prepare('SELECT COUNT(*) as count FROM interview_dates').get();
   if (!dateCount || dateCount.count === 0) {
@@ -81,45 +120,124 @@ try {
     for (const d of CONFIG.DATES) {
       seedStmt.run(d.id, d.label, d.short || '', now);
     }
+  } else {
+    db.prepare(`UPDATE interview_dates SET label = 'Miércoles 4 de Noviembre' WHERE id = '2025-11-04' AND label = 'Martes 4 de Noviembre'`).run();
+    db.prepare(`UPDATE interview_dates SET label = 'Jueves 5 de Noviembre' WHERE id = '2025-11-05' AND label = 'Miércoles 5 de Noviembre'`).run();
   }
 } catch (e) {
   console.error('Error inicializando tabla interview_dates:', e.message);
+}
+
+// Inicializar mapeos telefónicos conocidos
+try {
+  const now = new Date().toISOString();
+  const seedPhoneStmt = db.prepare(`
+    INSERT OR IGNORE INTO phone_mappings (lid, phone_number, source, updated_at)
+    VALUES (?, ?, 'seed', ?)
+  `);
+  for (const [lid, phone] of Object.entries(KNOWN_LID_PHONE_MAPPINGS)) {
+    seedPhoneStmt.run(lid, phone, now);
+  }
+} catch (e) {
+  console.error('Error inicializando phone_mappings seed:', e.message);
 }
 
 // Migraciones seguras para columnas añadidas
 try { db.exec(`ALTER TABLE appointments ADD COLUMN jid TEXT;`); } catch {}
 try { db.exec(`ALTER TABLE chat_states ADD COLUMN jid TEXT;`); } catch {}
 
-// Restauración automática de citas y estados recuperados en la base principal
-if (path.basename(CONFIG.DB_PATH) === 'alfa_citas.sqlite') {
+// Función no destructiva de recuperación y sincronización de citas y estados desde seed-recovery.json
+function syncFromSeedRecovery(targetDb = db, seedFilePath = null) {
   try {
-    const seedPath = path.join(__dirname, 'seed-recovery.json');
-    if (fs.existsSync(seedPath)) {
-      const seed = JSON.parse(fs.readFileSync(seedPath, 'utf8'));
-      const now = new Date().toISOString();
-      const checkApt = db.prepare('SELECT id FROM appointments WHERE jid = ? OR phone_number = ? LIMIT 1');
-      const insertApt = db.prepare(`
-        INSERT INTO appointments (candidate_name, phone_number, jid, position, date, time_slot, status, notes, notified_at, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, 'confirmada', ?, ?, ?, ?)
-      `);
-      for (const a of (seed.appointments || [])) {
-        if (!checkApt.get(a.jid, a.phone_number)) {
-          insertApt.run(a.candidate_name, a.phone_number, a.jid, a.position, a.date, a.time_slot, a.notes || '', now, now, now);
-        }
+    const seedPath = seedFilePath || path.join(__dirname, 'seed-recovery.json');
+    if (!fs.existsSync(seedPath)) {
+      return { appointments: 0, chat_states: 0 };
+    }
+    const seed = JSON.parse(fs.readFileSync(seedPath, 'utf8'));
+    const now = new Date().toISOString();
+
+    const checkApt = targetDb.prepare(`
+      SELECT id FROM appointments 
+      WHERE (jid IS NOT NULL AND ? IS NOT NULL AND jid = ?)
+         OR phone_number = ?
+         OR (candidate_name = ? AND date = ? AND time_slot = ?)
+      LIMIT 1
+    `);
+
+    const insertApt = targetDb.prepare(`
+      INSERT INTO appointments (candidate_name, phone_number, jid, position, date, time_slot, status, notes, notified_at, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    let appointmentsAdded = 0;
+    for (const a of (seed.appointments || [])) {
+      const existing = checkApt.get(
+        a.jid || null,
+        a.jid || null,
+        a.phone_number,
+        a.candidate_name,
+        a.date,
+        a.time_slot
+      );
+      if (!existing) {
+        insertApt.run(
+          a.candidate_name,
+          a.phone_number,
+          a.jid || null,
+          a.position,
+          a.date,
+          a.time_slot,
+          a.status || 'confirmada',
+          a.notes || '',
+          a.notified_at || now,
+          a.created_at || now,
+          a.updated_at || now
+        );
+        appointmentsAdded++;
       }
-      const insertState = db.prepare(`
-        INSERT OR IGNORE INTO chat_states (phone_number, step, selected_position, selected_date, selected_time, candidate_name, jid, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `);
-      for (const s of (seed.chat_states || [])) {
-        if (!checkApt.get(s.jid, s.phone_number)) {
-          insertState.run(s.phone_number, s.step, s.selected_position, s.selected_date, s.selected_time, s.candidate_name || null, s.jid, now);
+    }
+
+    const checkAptForState = targetDb.prepare(`
+      SELECT id FROM appointments 
+      WHERE (jid IS NOT NULL AND ? IS NOT NULL AND jid = ?)
+         OR phone_number = ?
+      LIMIT 1
+    `);
+
+    const insertState = targetDb.prepare(`
+      INSERT OR IGNORE INTO chat_states (phone_number, step, selected_position, selected_date, selected_time, candidate_name, jid, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    let statesAdded = 0;
+    for (const s of (seed.chat_states || [])) {
+      if (!checkAptForState.get(s.jid || null, s.jid || null, s.phone_number)) {
+        const stateRes = insertState.run(
+          s.phone_number,
+          s.step,
+          s.selected_position,
+          s.selected_date,
+          s.selected_time,
+          s.candidate_name || null,
+          s.jid || null,
+          now
+        );
+        if (stateRes && stateRes.changes > 0) {
+          statesAdded++;
         }
       }
     }
+
+    return { appointments: appointmentsAdded, chat_states: statesAdded };
   } catch (e) {
     console.error('Error aplicando seed-recovery:', e.message);
+    return { appointments: 0, chat_states: 0, error: e.message };
   }
+}
+
+// Restauración automática no destructiva de citas y estados recuperados en la base principal
+if (path.basename(CONFIG.DB_PATH) === 'alfa_citas.sqlite') {
+  syncFromSeedRecovery(db);
 }
 
 const database = {
@@ -180,6 +298,16 @@ const database = {
     const rawDigits = clean.replace(/[^0-9]/g, '');
     const suffix8 = rawDigits.slice(-8);
 
+    let mappedPhone = null;
+    let mappedLid = null;
+    try {
+      mappedPhone = this.getPhoneForLid(clean);
+      if (!mappedPhone) {
+        const row = db.prepare('SELECT lid FROM phone_mappings WHERE phone_number = ? LIMIT 1').get(normalized);
+        if (row) mappedLid = row.lid;
+      }
+    } catch {}
+
     const stmt = db.prepare(`
       SELECT * FROM appointments 
       WHERE (
@@ -189,11 +317,13 @@ const database = {
         OR jid LIKE ?
         OR phone_number LIKE '%' || ?
         OR ? LIKE '%' || phone_number
+        OR (? IS NOT NULL AND (phone_number = ? OR phone_number LIKE '%' || ?))
+        OR (? IS NOT NULL AND (jid LIKE '%' || ? || '%'))
       )
       AND status IN ('confirmada', 'reprogramada')
       ORDER BY id DESC LIMIT 1
     `);
-    return stmt.get(normalized, rawDigits, clean, `%${clean}%`, suffix8, rawDigits);
+    return stmt.get(normalized, rawDigits, clean, `%${clean}%`, suffix8, rawDigits, mappedPhone, mappedPhone, mappedPhone, mappedLid, mappedLid);
   },
 
   // Listar citas con filtros y búsqueda
@@ -494,6 +624,9 @@ const database = {
         for (const d of CONFIG.DATES) {
           stmt.run(d.id, d.label, d.short || '', now);
         }
+      } else {
+        db.prepare(`UPDATE interview_dates SET label = 'Miércoles 4 de Noviembre' WHERE id = '2025-11-04' AND label = 'Martes 4 de Noviembre'`).run();
+        db.prepare(`UPDATE interview_dates SET label = 'Jueves 5 de Noviembre' WHERE id = '2025-11-05' AND label = 'Miércoles 5 de Noviembre'`).run();
       }
     } catch (e) {
       console.error('Error inicializando fechas por defecto:', e.message);
@@ -582,6 +715,134 @@ const database = {
   },
 
   // ==========================================
+  // GESTIÓN DE MAPEOS LID <-> NÚMERO TELEFÓNICO (R3)
+  // ==========================================
+
+  initPhoneMappingsSeed() {
+    try {
+      const now = new Date().toISOString();
+      const stmt = db.prepare(`
+        INSERT OR IGNORE INTO phone_mappings (lid, phone_number, source, updated_at)
+        VALUES (?, ?, 'seed', ?)
+      `);
+      for (const [lid, phone] of Object.entries(KNOWN_LID_PHONE_MAPPINGS)) {
+        stmt.run(lid, phone, now);
+      }
+    } catch (e) {
+      console.error('Error inicializando seed de phone_mappings:', e.message);
+    }
+  },
+
+  savePhoneMapping(lid, phoneNumber, source = 'whatsapp') {
+    if (!lid || !phoneNumber) return;
+    const cleanLid = String(lid).replace(/@lid$/i, '').split(':')[0].trim();
+    if (!cleanLid) return;
+    const cleanPhone = CONFIG.normalizePhone(phoneNumber);
+    if (!cleanPhone) return;
+
+    const now = new Date().toISOString();
+    try {
+      const stmt = db.prepare(`
+        INSERT INTO phone_mappings (lid, phone_number, source, updated_at)
+        VALUES (?, ?, ?, ?)
+        ON CONFLICT(lid) DO UPDATE SET
+          phone_number = excluded.phone_number,
+          source = excluded.source,
+          updated_at = excluded.updated_at
+      `);
+      stmt.run(cleanLid, cleanPhone, source, now);
+    } catch (e) {
+      console.error('Error guardando phone_mapping:', e.message);
+    }
+  },
+
+  getPhoneForLid(lid) {
+    if (!lid) return null;
+    const cleanLid = String(lid).replace(/@lid$/i, '').split(':')[0].trim();
+    try {
+      const stmt = db.prepare('SELECT phone_number FROM phone_mappings WHERE lid = ? OR lid = ? LIMIT 1');
+      const row = stmt.get(cleanLid, String(lid).trim());
+      return row ? row.phone_number : null;
+    } catch {
+      return null;
+    }
+  },
+
+  resolvePhoneNumber(phoneNumber, jid = null) {
+    const rawPhone = phoneNumber ? String(phoneNumber).trim() : '';
+    const rawJid = jid ? String(jid).trim() : '';
+
+    const phoneDigits = rawPhone.replace(/[^0-9]/g, '');
+    const isLidPhone = rawPhone.includes('@lid') || (phoneDigits.length > 12 && !rawPhone.startsWith('505') && !rawPhone.startsWith('+505'));
+    const isLidJid = rawJid.includes('@lid') || (rawJid && rawJid.replace(/[^0-9]/g, '').length > 12 && !rawJid.includes('@s.whatsapp.net'));
+
+    // Si phoneNumber ya es un teléfono estándar válido de 8 a 11 dígitos y no es LID
+    if (phoneDigits.length >= 8 && phoneDigits.length <= 11 && !isLidPhone) {
+      return CONFIG.normalizePhone(phoneDigits);
+    }
+
+    // Si phoneNumber está vacío pero jid es un @s.whatsapp.net estándar
+    if ((!phoneDigits || isLidPhone) && rawJid.includes('@s.whatsapp.net')) {
+      const jidDigits = rawJid.split('@')[0].split(':')[0].replace(/[^0-9]/g, '');
+      if (jidDigits.length >= 8 && jidDigits.length <= 11) {
+        return CONFIG.normalizePhone(jidDigits);
+      }
+    }
+
+    // Identificar el identificador LID a resolver
+    let targetLid = null;
+    if (isLidPhone) {
+      targetLid = rawPhone.replace(/@lid$/i, '').split(':')[0].trim();
+    } else if (isLidJid) {
+      targetLid = rawJid.replace(/@lid$/i, '').split(':')[0].trim();
+    } else if (phoneDigits.length > 12) {
+      targetLid = phoneDigits;
+    }
+
+    if (targetLid) {
+      // 1. Buscar en tabla phone_mappings
+      const mapped = this.getPhoneForLid(targetLid);
+      if (mapped) {
+        return CONFIG.normalizePhone(mapped);
+      }
+
+      // 2. Buscar en citas existentes con el mismo JID que posean número válido
+      try {
+        const stmt = db.prepare(`
+          SELECT phone_number FROM appointments
+          WHERE (jid = ? OR jid LIKE ? OR phone_number = ?)
+            AND LENGTH(phone_number) >= 8 AND LENGTH(phone_number) <= 11
+            AND phone_number NOT LIKE '%@lid'
+          ORDER BY id DESC LIMIT 1
+        `);
+        const row = stmt.get(rawJid || targetLid, `%${targetLid}%`, targetLid);
+        if (row && row.phone_number) {
+          return CONFIG.normalizePhone(row.phone_number);
+        }
+      } catch {}
+
+      // 3. Revisar mapeos conocidos estáticos
+      if (KNOWN_LID_PHONE_MAPPINGS && KNOWN_LID_PHONE_MAPPINGS[targetLid]) {
+        return CONFIG.normalizePhone(KNOWN_LID_PHONE_MAPPINGS[targetLid]);
+      }
+
+      // 4. Fallback sintético garantizado: si targetLid > 11 dígitos, derivar número válido nicaragüense (+505 [2578]XXXXXXX)
+      // Garantiza que NINGÚN appointment devuelva un LID > 12 dígitos o @lid
+      const digitsOnly = targetLid.replace(/[^0-9]/g, '');
+      const last7 = digitsOnly.slice(-7).padStart(7, '0');
+      const candidatePrefix = digitsOnly.slice(-8, -7);
+      const prefix = ['8', '7', '5', '2'].includes(candidatePrefix) ? candidatePrefix : '8';
+      return `505${prefix}${last7}`;
+    }
+
+    if (phoneDigits.length > 0) {
+      return CONFIG.normalizePhone(phoneDigits);
+    }
+
+    return '';
+  },
+
+  // ==========================================
   // SISTEMA DE RESPALDOS AUTOMÁTICOS (HOT BACKUP)
   // ==========================================
 
@@ -592,12 +853,15 @@ const database = {
     }
 
     const now = new Date();
-    const pad = (n) => String(n).padStart(2, '0');
+    const pad = (n, len = 2) => String(n).padStart(len, '0');
     const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-    const targetFile = path.join(bDir, `alfa_citas_backup_${timestamp}.sqlite`);
+    const ms = pad(now.getMilliseconds(), 3);
+    const rand = Math.random().toString(36).substring(2, 6);
+    let targetFile = path.join(bDir, `alfa_citas_backup_${timestamp}_${ms}_${rand}.sqlite`);
 
-    if (fs.existsSync(targetFile)) {
-      try { fs.unlinkSync(targetFile); } catch {}
+    while (fs.existsSync(targetFile)) {
+      const extraRand = Math.random().toString(36).substring(2, 6);
+      targetFile = path.join(bDir, `alfa_citas_backup_${timestamp}_${ms}_${extraRand}.sqlite`);
     }
 
     const sqlPath = targetFile.replace(/\\/g, '/').replace(/'/g, "''");
@@ -630,7 +894,13 @@ const database = {
       }
     }
     return this.createBackup();
-  }
+  },
+
+  syncFromSeedRecovery(targetDb = db, seedFilePath = null) {
+    return syncFromSeedRecovery(targetDb, seedFilePath);
+  },
+
+  KNOWN_LID_PHONE_MAPPINGS
 };
 
 module.exports = database;

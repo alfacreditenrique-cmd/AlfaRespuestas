@@ -322,3 +322,66 @@ test('Database: Sistema de Respaldos Automáticos en Caliente (createBackup)', (
   try { fs.unlinkSync(backupPath); } catch {}
 });
 
+test('Database: Sincronización no destructiva desde seed-recovery.json (syncFromSeedRecovery)', () => {
+  // Base de datos limpia tras beforeEach
+  const res1 = database.syncFromSeedRecovery();
+  assert.ok(res1.appointments >= 24, `Debe sincronizar al menos 24 citas (sincronizó ${res1.appointments})`);
+
+  const list = database.listAppointments();
+  assert.ok(list.length >= 24, `Total de citas en BD debe ser >= 24 (encontró ${list.length})`);
+
+  // Verificar presencia de candidatos clave requeridos por R4 y R5
+  const ronald = list.find(a => /ronald\s+espinoza/i.test(a.candidate_name));
+  assert.ok(ronald, 'Ronald Espinoza debe estar presente en las citas');
+  assert.equal(ronald.position, 'Oficial de Crédito');
+  assert.equal(ronald.date, '2025-11-04');
+  assert.equal(ronald.time_slot, '14:30');
+
+  const esmeyling = list.find(a => /esmeyling/i.test(a.candidate_name));
+  assert.ok(esmeyling, 'Esmeyling Martínez debe estar presente');
+  assert.equal(esmeyling.date, '2025-11-04');
+  assert.equal(esmeyling.time_slot, '13:30');
+
+  const daniela = list.find(a => /daniela\s+kassandra/i.test(a.candidate_name));
+  assert.ok(daniela, 'Daniela Kassandra Molina Castro debe estar presente');
+  assert.equal(daniela.date, '2025-11-04');
+  assert.equal(daniela.time_slot, '13:45');
+
+  const juan = list.find(a => /juan\s+alberto/i.test(a.candidate_name));
+  assert.ok(juan, 'Juan Alberto Chavarría aguirre debe estar presente');
+
+  const napoleon = list.find(a => /napoleon/i.test(a.candidate_name));
+  assert.ok(napoleon, 'Napoleon García vivas debe estar presente');
+
+  // Idempotencia: una segunda pasada no debe duplicar registros
+  const res2 = database.syncFromSeedRecovery();
+  assert.equal(res2.appointments, 0, 'La segunda ejecución no debe insertar citas duplicadas');
+  assert.equal(database.listAppointments().length, list.length, 'El total de citas debe permanecer inalterado');
+});
+
+test('Database: Conciliación y resolución de Ronald Espinoza por teléfono y LID', () => {
+  database.syncFromSeedRecovery();
+
+  // Búsqueda por número directo asignado
+  const aptByPhone = database.getAppointmentByPhone('50589436869');
+  assert.ok(aptByPhone, 'Debe encontrar a Ronald Espinoza por su teléfono 50589436869');
+  assert.match(aptByPhone.candidate_name, /Ronald Espinoza/i);
+
+  // Búsqueda por LID histórico de WhatsApp
+  const aptByLid = database.getAppointmentByPhone('87424344531017@lid');
+  assert.ok(aptByLid, 'Debe encontrar a Ronald Espinoza por su JID @lid');
+  assert.match(aptByLid.candidate_name, /Ronald Espinoza/i);
+});
+
+test('Database & Session: Verificación de integridad de credenciales de WhatsApp (auth_info_baileys)', () => {
+  const credsPath = path.join(CONFIG.AUTH_DIR, 'creds.json');
+  assert.ok(fs.existsSync(credsPath), 'auth_info_baileys/creds.json debe existir');
+
+  const creds = JSON.parse(fs.readFileSync(credsPath, 'utf8'));
+  assert.ok(creds.me, 'creds.json debe tener objeto de identidad me');
+  assert.ok(creds.me.id && creds.me.id.includes('@s.whatsapp.net'), 'ID de WhatsApp debe tener formato @s.whatsapp.net');
+  assert.ok(creds.noiseKey, 'Clave criptográfica noiseKey debe estar presente');
+  assert.ok(creds.signedIdentityKey, 'signedIdentityKey debe estar presente');
+  assert.ok(creds.signedPreKey, 'signedPreKey debe estar presente');
+});
+

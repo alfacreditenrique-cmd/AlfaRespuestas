@@ -25,6 +25,24 @@ function formatTime12h(timeStr) {
   return `${displayHours.toString().padStart(2, '0')}:${minutes} ${ampm}`;
 }
 
+// Formateador de teléfono para visualización humana limpia (+505 XXXX-XXXX)
+function formatDisplayPhone(phone) {
+  if (!phone) return '-';
+  const raw = String(phone).trim();
+  if (raw.includes('@lid')) return raw;
+  const clean = raw.replace(/[^0-9]/g, '');
+  if (clean.length === 8) {
+    return `+505 ${clean.slice(0, 4)}-${clean.slice(4)}`;
+  }
+  if (clean.length === 11 && clean.startsWith('505')) {
+    return `+505 ${clean.slice(3, 7)}-${clean.slice(7)}`;
+  }
+  if (clean.length === 11 && clean.startsWith('502')) {
+    return `+502 ${clean.slice(3, 7)}-${clean.slice(7)}`;
+  }
+  return raw;
+}
+
 // Inicialización
 document.addEventListener('DOMContentLoaded', () => {
   initWebSocket();
@@ -387,7 +405,7 @@ function renderAppointmentsTable(appointments) {
 
   tbody.innerHTML = appointments.map((apt, index) => {
     const time12h = formatTime12h(apt.time_slot);
-    const dateFormatted = apt.date === '2025-11-04' ? 'Martes 04/Nov' : (apt.date === '2025-11-05' ? 'Miércoles 05/Nov' : apt.date);
+    const dateFormatted = apt.date === '2025-11-04' ? 'Miércoles 04/Nov' : (apt.date === '2025-11-05' ? 'Jueves 05/Nov' : apt.date);
 
     // Estado Badge
     let statusBadge = '';
@@ -410,7 +428,20 @@ function renderAppointmentsTable(appointments) {
       ? `<span title="Notificado el ${new Date(apt.notified_at).toLocaleTimeString()}" class="inline-flex items-center text-xs font-medium text-emerald-600 gap-1"><i class="fa-solid fa-check-double text-emerald-500"></i> Enviado</span>`
       : `<span class="inline-flex items-center text-xs font-medium text-slate-400 gap-1"><i class="fa-regular fa-clock"></i> Pendiente</span>`;
 
-    const digitsOnly = String(apt.phone_number).replace(/[^0-9]/g, '');
+    const digitsOnly = String(apt.phone_number || '').replace(/[^0-9]/g, '');
+    const displayPhone = formatDisplayPhone(apt.phone_number);
+    const isValidPhoneLink = digitsOnly.length >= 8 && digitsOnly.length <= 11 && !String(apt.phone_number).includes('@lid');
+    const waLinkDigits = digitsOnly.length === 8 ? `505${digitsOnly}` : digitsOnly;
+
+    const phoneCell = isValidPhoneLink
+      ? `<a href="https://wa.me/${waLinkDigits}" target="_blank" rel="noopener noreferrer" title="Abrir chat en WhatsApp" class="inline-flex items-center space-x-1.5 font-medium text-slate-800 hover:text-emerald-700 group transition">
+          <i class="fa-brands fa-whatsapp text-emerald-600 text-sm group-hover:scale-110 transition-transform"></i>
+          <span class="group-hover:underline font-mono text-xs">${escapeHtml(displayPhone)}</span>
+        </a>`
+      : `<span class="inline-flex items-center space-x-1.5 font-medium text-slate-600 font-mono text-xs">
+          <i class="fa-solid fa-phone text-slate-400 text-xs"></i>
+          <span>${escapeHtml(displayPhone)}</span>
+        </span>`;
 
     return `
       <tr class="hover:bg-blue-50/40 transition-colors">
@@ -422,10 +453,7 @@ function renderAppointmentsTable(appointments) {
         </td>
 
         <td class="py-3.5 px-4">
-          <a href="https://wa.me/${digitsOnly}" target="_blank" rel="noopener noreferrer" title="Abrir chat en WhatsApp" class="inline-flex items-center space-x-1.5 font-medium text-slate-800 hover:text-emerald-700 group transition">
-            <i class="fa-brands fa-whatsapp text-emerald-600 text-sm group-hover:scale-110 transition-transform"></i>
-            <span class="group-hover:underline">${escapeHtml(apt.phone_number)}</span>
-          </a>
+          ${phoneCell}
         </td>
 
         <td class="py-3.5 px-4">

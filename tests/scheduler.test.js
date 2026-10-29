@@ -60,16 +60,16 @@ test('Resolución de Fechas: identifica 4 y 5 de Noviembre por ID numérico o c�
   const d1 = scheduler.resolveDate('1');
   assert.ok(d1);
   assert.equal(d1.id, '2025-11-04');
-  assert.equal(d1.label, 'Martes 4 de Noviembre');
+  assert.equal(d1.label, 'Miércoles 4 de Noviembre');
 
   const d2 = scheduler.resolveDate('2');
   assert.ok(d2);
   assert.equal(d2.id, '2025-11-05');
-  assert.equal(d2.label, 'Miércoles 5 de Noviembre');
+  assert.equal(d2.label, 'Jueves 5 de Noviembre');
 
   const byCode = scheduler.resolveDate('2025-11-04');
   assert.ok(byCode);
-  assert.equal(byCode.label, 'Martes 4 de Noviembre');
+  assert.equal(byCode.label, 'Miércoles 4 de Noviembre');
 
   // Variaciones numéricas
   assert.equal(scheduler.resolveDate('1.').id, '2025-11-04');
@@ -98,7 +98,7 @@ test('Generación de Notificación de Reprogramación: incluye todos los datos c
   const message = scheduler.generateRescheduledNotice(appointment);
   assert.ok(message.includes('Ana Lucía Gómez'), 'Debe incluir el nombre del candidato');
   assert.ok(message.includes('Oficial de Crédito'), 'Debe incluir el cargo/plaza');
-  assert.ok(message.includes('Martes 4 de Noviembre'), 'Debe incluir la fecha legible');
+  assert.ok(message.includes('Miércoles 4 de Noviembre'), 'Debe incluir la fecha legible');
   assert.ok(message.includes('09:30 AM'), 'Debe incluir la hora formateada');
   assert.ok(message.includes('AlfaCredit S.A.'), 'Debe incluir el nombre de la empresa');
 });

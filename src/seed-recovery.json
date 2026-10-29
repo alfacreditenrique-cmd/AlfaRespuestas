@@ -7,7 +7,11 @@
       "position": "Oficial de Crédito",
       "date": "2025-11-04",
       "time_slot": "08:30",
-      "notes": "Agendado automáticamente vía WhatsApp bot"
+      "status": "confirmada",
+      "notes": "Agendado automáticamente vía WhatsApp bot",
+      "notified_at": "2026-10-29T02:23:34.357Z",
+      "created_at": "2026-10-29T02:23:34.357Z",
+      "updated_at": "2026-10-29T02:23:34.357Z"
     },
     {
       "candidate_name": "Postulante Confirmado (ID 106674740297844)",
@@ -16,7 +20,11 @@
       "position": "Oficial de Crédito",
       "date": "2025-11-04",
       "time_slot": "08:45",
-      "notes": "Turno 08:45 AM reservado y recuperado desde sesión WhatsApp"
+      "status": "confirmada",
+      "notes": "Turno 08:45 AM reservado y recuperado desde sesión WhatsApp",
+      "notified_at": "2026-10-29T02:23:34.357Z",
+      "created_at": "2026-10-29T02:23:34.357Z",
+      "updated_at": "2026-10-29T02:23:34.357Z"
     },
     {
       "candidate_name": "Postulante Confirmado (ID 45222197215415)",
@@ -25,7 +33,11 @@
       "position": "Oficial de Crédito",
       "date": "2025-11-04",
       "time_slot": "09:00",
-      "notes": "Turno 09:00 AM reservado y recuperado desde sesión WhatsApp"
+      "status": "confirmada",
+      "notes": "Turno 09:00 AM reservado y recuperado desde sesión WhatsApp",
+      "notified_at": "2026-10-29T02:23:34.357Z",
+      "created_at": "2026-10-29T02:23:34.357Z",
+      "updated_at": "2026-10-29T02:23:34.357Z"
     },
     {
       "candidate_name": "Jiuver Alexander García Chavarría",
@@ -34,7 +46,11 @@
       "position": "Desembolsador de Crédito",
       "date": "2025-11-04",
       "time_slot": "09:15",
-      "notes": "Recuperada del historial de WhatsApp"
+      "status": "confirmada",
+      "notes": "Recuperada del historial de WhatsApp",
+      "notified_at": "2026-10-29T02:23:34.357Z",
+      "created_at": "2026-10-29T02:23:34.357Z",
+      "updated_at": "2026-10-29T02:23:34.357Z"
     },
     {
       "candidate_name": "Winston Porfirio Meza Martínez",
@@ -43,7 +59,11 @@
       "position": "Oficial de Crédito",
       "date": "2025-11-04",
       "time_slot": "09:30",
-      "notes": "Recuperada del historial de WhatsApp"
+      "status": "confirmada",
+      "notes": "Recuperada del historial de WhatsApp",
+      "notified_at": "2026-10-29T02:23:34.357Z",
+      "created_at": "2026-10-29T02:23:34.357Z",
+      "updated_at": "2026-10-29T02:23:34.357Z"
     },
     {
       "candidate_name": "Jose Manuel Garcia",
@@ -52,7 +72,11 @@
       "position": "Oficial de Crédito",
       "date": "2025-11-04",
       "time_slot": "09:45",
-      "notes": "Recuperada del historial de WhatsApp"
+      "status": "confirmada",
+      "notes": "Recuperada del historial de WhatsApp",
+      "notified_at": "2026-10-29T02:23:34.357Z",
+      "created_at": "2026-10-29T02:23:34.357Z",
+      "updated_at": "2026-10-29T02:23:34.357Z"
     },
     {
       "candidate_name": "Lidia del Rosario Velasquez Padilla",
@@ -61,7 +85,11 @@
       "position": "Desembolsador de Crédito",
       "date": "2025-11-04",
       "time_slot": "10:00",
-      "notes": "Recuperada del historial de WhatsApp"
+      "status": "cancelada",
+      "notes": "Recuperada del historial de WhatsApp | no es de SEBACO o lugares aledaños",
+      "notified_at": "2026-10-29T15:37:12.219Z",
+      "created_at": "2026-10-29T02:23:34.357Z",
+      "updated_at": "2026-10-29T15:37:12.219Z"
     },
     {
       "candidate_name": "Rafael Conrado Moreno",
@@ -70,7 +98,11 @@
       "position": "Oficial de Crédito",
       "date": "2025-11-04",
       "time_slot": "10:15",
-      "notes": "Recuperada del historial de WhatsApp"
+      "status": "confirmada",
+      "notes": "Recuperada del historial de WhatsApp",
+      "notified_at": "2026-10-29T02:23:34.357Z",
+      "created_at": "2026-10-29T02:23:34.357Z",
+      "updated_at": "2026-10-29T02:23:34.357Z"
     },
     {
       "candidate_name": "Jairo Rappaccioli Martinez",
@@ -79,7 +111,11 @@
       "position": "Oficial de Crédito",
       "date": "2025-11-04",
       "time_slot": "10:30",
-      "notes": "Recuperada del historial de WhatsApp"
+      "status": "confirmada",
+      "notes": "Recuperada del historial de WhatsApp",
+      "notified_at": "2026-10-29T02:23:34.357Z",
+      "created_at": "2026-10-29T02:23:34.357Z",
+      "updated_at": "2026-10-29T02:23:34.357Z"
     },
     {
       "candidate_name": "Francisco Rodríguez",
@@ -88,7 +124,11 @@
       "position": "Desembolsador de Crédito",
       "date": "2025-11-04",
       "time_slot": "10:45",
-      "notes": "Recuperada del historial de WhatsApp"
+      "status": "confirmada",
+      "notes": "Recuperada del historial de WhatsApp",
+      "notified_at": "2026-10-29T02:23:34.357Z",
+      "created_at": "2026-10-29T02:23:34.357Z",
+      "updated_at": "2026-10-29T02:23:34.357Z"
     },
     {
       "candidate_name": "Cristhopper Tyrone Mercado Pilarte",
@@ -97,7 +137,11 @@
       "position": "Oficial de Crédito",
       "date": "2025-11-04",
       "time_slot": "11:00",
-      "notes": "Recuperada del historial de WhatsApp"
+      "status": "confirmada",
+      "notes": "Recuperada del historial de WhatsApp",
+      "notified_at": "2026-10-29T02:23:34.357Z",
+      "created_at": "2026-10-29T02:23:34.357Z",
+      "updated_at": "2026-10-29T02:23:34.357Z"
     },
     {
       "candidate_name": "Luis Carlos Delgado Rayo",
@@ -106,7 +150,11 @@
       "position": "Promotor de Crédito",
       "date": "2025-11-04",
       "time_slot": "11:15",
-      "notes": "Recuperada del historial de WhatsApp"
+      "status": "confirmada",
+      "notes": "Recuperada del historial de WhatsApp",
+      "notified_at": "2026-10-29T02:23:34.357Z",
+      "created_at": "2026-10-29T02:23:34.357Z",
+      "updated_at": "2026-10-29T02:23:34.357Z"
     },
     {
       "candidate_name": "Nelson Alexander Meza Hernández",
@@ -115,7 +163,11 @@
       "position": "Promotor de Crédito",
       "date": "2025-11-04",
       "time_slot": "11:30",
-      "notes": "Recuperada del historial de WhatsApp"
+      "status": "confirmada",
+      "notes": "Recuperada del historial de WhatsApp",
+      "notified_at": "2026-10-29T02:23:34.357Z",
+      "created_at": "2026-10-29T02:23:34.357Z",
+      "updated_at": "2026-10-29T02:23:34.357Z"
     },
     {
       "candidate_name": "Alejandra José González Palacios",
@@ -124,7 +176,11 @@
       "position": "Oficial de Crédito",
       "date": "2025-11-04",
       "time_slot": "11:45",
-      "notes": "Recuperada del historial de WhatsApp"
+      "status": "confirmada",
+      "notes": "Recuperada del historial de WhatsApp",
+      "notified_at": "2026-10-29T02:23:34.357Z",
+      "created_at": "2026-10-29T02:23:34.357Z",
+      "updated_at": "2026-10-29T02:23:34.357Z"
     },
     {
       "candidate_name": "Dania Maradiaga Martinez",
@@ -133,7 +189,11 @@
       "position": "Oficial de Crédito",
       "date": "2025-11-04",
       "time_slot": "12:00",
-      "notes": "Recuperada del historial de WhatsApp"
+      "status": "confirmada",
+      "notes": "Recuperada del historial de WhatsApp",
+      "notified_at": "2026-10-29T02:23:34.357Z",
+      "created_at": "2026-10-29T02:23:34.357Z",
+      "updated_at": "2026-10-29T02:23:34.357Z"
     },
     {
       "candidate_name": "Postulante Confirmado (ID 101485933240503)",
@@ -142,7 +202,11 @@
       "position": "Oficial de Crédito",
       "date": "2025-11-05",
       "time_slot": "08:30",
-      "notes": "Turno 08:30 AM reservado y recuperado desde sesión WhatsApp"
+      "status": "confirmada",
+      "notes": "Turno 08:30 AM reservado y recuperado desde sesión WhatsApp",
+      "notified_at": "2026-10-29T02:23:34.357Z",
+      "created_at": "2026-10-29T02:23:34.357Z",
+      "updated_at": "2026-10-29T02:23:34.357Z"
     },
     {
       "candidate_name": "Elis Similex Rosales Paez",
@@ -151,7 +215,11 @@
       "position": "Desembolsador de Crédito",
       "date": "2025-11-05",
       "time_slot": "08:45",
-      "notes": "Recuperada del historial de WhatsApp"
+      "status": "confirmada",
+      "notes": "Recuperada del historial de WhatsApp",
+      "notified_at": "2026-10-29T02:23:34.357Z",
+      "created_at": "2026-10-29T02:23:34.357Z",
+      "updated_at": "2026-10-29T02:23:34.357Z"
     },
     {
       "candidate_name": "Maríaneia Morales Pérez",
@@ -160,7 +228,11 @@
       "position": "Promotor de Crédito",
       "date": "2025-11-05",
       "time_slot": "09:00",
-      "notes": "Recuperada del historial de WhatsApp"
+      "status": "confirmada",
+      "notes": "Recuperada del historial de WhatsApp",
+      "notified_at": "2026-10-29T02:23:34.357Z",
+      "created_at": "2026-10-29T02:23:34.357Z",
+      "updated_at": "2026-10-29T02:23:34.357Z"
     },
     {
       "candidate_name": "Asbell Eleazar Martínez Alarcón",
@@ -169,7 +241,190 @@
       "position": "Promotor de Crédito",
       "date": "2025-11-05",
       "time_slot": "09:15",
-      "notes": "Recuperada del historial de WhatsApp"
+      "status": "confirmada",
+      "notes": "Recuperada del historial de WhatsApp",
+      "notified_at": "2026-10-29T02:23:34.357Z",
+      "created_at": "2026-10-29T02:23:34.357Z",
+      "updated_at": "2026-10-29T02:23:34.357Z"
+    },
+    {
+      "candidate_name": "Juan Alberto Chavarría aguirre",
+      "phone_number": "57256796233770",
+      "jid": "57256796233770@lid",
+      "position": "Promotor de Crédito",
+      "date": "2025-11-04",
+      "time_slot": "09:00",
+      "status": "confirmada",
+      "notes": "Recuperada del historial de WhatsApp ⚠️ TURNO COMPARTIDO CON OTRA CITA, REVISAR",
+      "notified_at": "2026-10-29T15:51:46.540Z",
+      "created_at": "2026-10-29T14:10:26.846Z",
+      "updated_at": "2026-10-29T15:51:46.540Z"
+    },
+    {
+      "candidate_name": "Esmeyling Martínez",
+      "phone_number": "50585136655",
+      "jid": "251982140993783@lid",
+      "position": "Desembolsador de Crédito",
+      "date": "2025-11-04",
+      "time_slot": "13:30",
+      "status": "confirmada",
+      "notes": "Agendado automáticamente vía WhatsApp bot",
+      "notified_at": "2026-10-29T14:18:29.238Z",
+      "created_at": "2026-10-29T14:18:29.156Z",
+      "updated_at": "2026-10-29T14:18:29.238Z"
+    },
+    {
+      "candidate_name": "Daniela Kassandra Molina Castro",
+      "phone_number": "50587099189",
+      "jid": "13744147030196@lid",
+      "position": "Oficial de Crédito",
+      "date": "2025-11-04",
+      "time_slot": "13:45",
+      "status": "confirmada",
+      "notes": "Agendado automáticamente vía WhatsApp bot",
+      "notified_at": "2026-10-29T14:22:08.816Z",
+      "created_at": "2026-10-29T14:22:08.368Z",
+      "updated_at": "2026-10-29T14:22:08.816Z"
+    },
+    {
+      "candidate_name": "Napoleon García vivas",
+      "phone_number": "50587411241",
+      "jid": "153725536583712@lid",
+      "position": "Promotor de Crédito",
+      "date": "2025-11-05",
+      "time_slot": "09:30",
+      "status": "confirmada",
+      "notes": "Agendado automáticamente vía WhatsApp bot",
+      "notified_at": "2026-10-29T14:54:08.699Z",
+      "created_at": "2026-10-29T14:54:08.397Z",
+      "updated_at": "2026-10-29T14:54:08.699Z"
+    },
+    {
+      "candidate_name": "Karen castillo",
+      "phone_number": "50589246391",
+      "jid": "80079849816117@lid",
+      "position": "Oficial de Crédito",
+      "date": "2025-11-05",
+      "time_slot": "09:45",
+      "status": "confirmada",
+      "notes": "Agendado automáticamente vía WhatsApp bot",
+      "notified_at": "2026-10-29T15:03:06.541Z",
+      "created_at": "2026-10-29T15:03:05.855Z",
+      "updated_at": "2026-10-29T15:03:06.541Z"
+    },
+    {
+      "candidate_name": "Julio Cesar Hernandez Perez",
+      "phone_number": "50588272121",
+      "jid": "123656420245589@lid",
+      "position": "Oficial de Crédito",
+      "date": "2025-11-05",
+      "time_slot": "10:00",
+      "status": "confirmada",
+      "notes": "Agendado automáticamente vía WhatsApp bot",
+      "notified_at": "2026-10-29T15:05:42.374Z",
+      "created_at": "2026-10-29T15:05:42.357Z",
+      "updated_at": "2026-10-29T15:05:42.374Z"
+    },
+    {
+      "candidate_name": "José Miguel Baldizon Galeano",
+      "phone_number": "50558328676",
+      "jid": "262237986025598@lid",
+      "position": "Desembolsador de Crédito",
+      "date": "2025-11-04",
+      "time_slot": "14:00",
+      "status": "confirmada",
+      "notes": "Agendado automáticamente vía WhatsApp bot",
+      "notified_at": "2026-10-29T15:05:45.563Z",
+      "created_at": "2026-10-29T15:05:45.273Z",
+      "updated_at": "2026-10-29T15:05:45.563Z"
+    },
+    {
+      "candidate_name": "Karina Zambrana",
+      "phone_number": "50578358674",
+      "jid": "155473739288712@lid",
+      "position": "Promotor de Crédito",
+      "date": "2025-11-04",
+      "time_slot": "14:15",
+      "status": "confirmada",
+      "notes": "Agendado automáticamente vía WhatsApp bot",
+      "notified_at": "2026-10-29T15:06:29.698Z",
+      "created_at": "2026-10-29T15:06:29.385Z",
+      "updated_at": "2026-10-29T15:06:29.698Z"
+    },
+    {
+      "candidate_name": "Junior jose chavarria matus",
+      "phone_number": "50582066598",
+      "jid": "92457844879515@lid",
+      "position": "Oficial de Crédito",
+      "date": "2025-11-05",
+      "time_slot": "10:15",
+      "status": "confirmada",
+      "notes": "Agendado automáticamente vía WhatsApp bot",
+      "notified_at": "2026-10-29T15:25:41.549Z",
+      "created_at": "2026-10-29T15:25:41.261Z",
+      "updated_at": "2026-10-29T15:25:41.549Z"
+    },
+    {
+      "candidate_name": "Darwin Fabian Potosme Montalvan",
+      "phone_number": "50587443032",
+      "jid": "142679233003740@lid",
+      "position": "Oficial de Crédito",
+      "date": "2025-11-04",
+      "time_slot": "14:30",
+      "status": "cancelada",
+      "notes": "Agendado automáticamente vía WhatsApp bot | No es de Sebaco ni de sus ciudades aledañas",
+      "notified_at": "2026-10-29T15:36:05.841Z",
+      "created_at": "2026-10-29T15:33:40.600Z",
+      "updated_at": "2026-10-29T15:36:05.841Z"
+    },
+    {
+      "candidate_name": "Eden Jacinto Lopez Ortega.",
+      "phone_number": "50586069625",
+      "jid": "212803298263138@lid",
+      "position": "Desembolsador de Crédito",
+      "date": "2025-11-05",
+      "time_slot": "10:30",
+      "status": "confirmada",
+      "notes": "Agendado automáticamente vía WhatsApp bot",
+      "notified_at": "2026-10-29T15:57:00.492Z",
+      "created_at": "2026-10-29T15:57:00.068Z",
+      "updated_at": "2026-10-29T15:57:00.492Z"
+    },
+    {
+      "candidate_name": "Kenia Gissel valle Mendez",
+      "phone_number": "50582667129",
+      "jid": "267417582313521@lid",
+      "position": "Promotor de Crédito",
+      "date": "2025-11-04",
+      "time_slot": "10:00",
+      "status": "confirmada",
+      "notes": "Agendado automáticamente vía WhatsApp bot",
+      "notified_at": "2026-10-29T16:24:26.939Z",
+      "created_at": "2026-10-29T16:24:26.809Z",
+      "updated_at": "2026-10-29T16:24:26.939Z"
+    },
+    {
+      "candidate_name": "Steven Jesus Zelaya",
+      "phone_number": "50557196182",
+      "jid": "237602456256678@lid",
+      "position": "Desembolsador de Crédito",
+      "date": "2025-11-05",
+      "time_slot": "10:45",
+      "status": "confirmada",
+      "notes": "Agendado automáticamente vía WhatsApp bot",
+      "notified_at": "2026-10-29T16:33:30.498Z",
+      "created_at": "2026-10-29T16:33:30.400Z",
+      "updated_at": "2026-10-29T16:33:30.498Z"
+    },
+    {
+      "candidate_name": "Ronald Espinoza",
+      "phone_number": "50589436869",
+      "jid": "87424344531017@lid",
+      "position": "Oficial de Crédito",
+      "date": "2025-11-04",
+      "time_slot": "14:30",
+      "status": "confirmada",
+      "notes": "Candidato confirmado conciliado desde WhatsApp (Ronald Espinoza Vanegas)"
     }
   ],
   "chat_states": [
@@ -179,6 +434,7 @@
       "selected_position": "Oficial de Crédito",
       "selected_date": "2025-11-04",
       "selected_time": "11:15",
+      "candidate_name": null,
       "jid": "278490125480035@lid"
     },
     {
@@ -187,6 +443,7 @@
       "selected_position": "Promotor de Crédito",
       "selected_date": null,
       "selected_time": null,
+      "candidate_name": null,
       "jid": "21179188416627@lid"
     },
     {
@@ -195,6 +452,7 @@
       "selected_position": "Promotor de Crédito",
       "selected_date": null,
       "selected_time": null,
+      "candidate_name": null,
       "jid": "40497330532540@lid"
     },
     {
@@ -203,6 +461,7 @@
       "selected_position": "Promotor de Crédito",
       "selected_date": null,
       "selected_time": null,
+      "candidate_name": null,
       "jid": "231185875738830@lid"
     },
     {
@@ -211,15 +470,8 @@
       "selected_position": "Oficial de Crédito",
       "selected_date": null,
       "selected_time": null,
+      "candidate_name": null,
       "jid": "74062869045435@lid"
-    },
-    {
-      "phone_number": "87424344531017",
-      "step": "AWAITING_POSITION",
-      "selected_position": null,
-      "selected_date": null,
-      "selected_time": null,
-      "jid": "87424344531017@lid"
     },
     {
       "phone_number": "239410167689333",
@@ -227,6 +479,7 @@
       "selected_position": null,
       "selected_date": null,
       "selected_time": null,
+      "candidate_name": null,
       "jid": "239410167689333@lid"
     },
     {
@@ -235,6 +488,7 @@
       "selected_position": null,
       "selected_date": null,
       "selected_time": null,
+      "candidate_name": null,
       "jid": "181609101840435@lid"
     },
     {
@@ -243,6 +497,7 @@
       "selected_position": null,
       "selected_date": null,
       "selected_time": null,
+      "candidate_name": null,
       "jid": "142958758232232@lid"
     },
     {
@@ -251,6 +506,7 @@
       "selected_position": null,
       "selected_date": null,
       "selected_time": null,
+      "candidate_name": null,
       "jid": "143954418864316@lid"
     },
     {
@@ -259,6 +515,7 @@
       "selected_position": null,
       "selected_date": null,
       "selected_time": null,
+      "candidate_name": null,
       "jid": "120057271185433@lid"
     },
     {
@@ -267,6 +524,7 @@
       "selected_position": null,
       "selected_date": null,
       "selected_time": null,
+      "candidate_name": null,
       "jid": "131791088279582@lid"
     },
     {
@@ -275,6 +533,7 @@
       "selected_position": null,
       "selected_date": null,
       "selected_time": null,
+      "candidate_name": null,
       "jid": "92238717669440@lid"
     },
     {
@@ -283,6 +542,7 @@
       "selected_position": null,
       "selected_date": null,
       "selected_time": null,
+      "candidate_name": null,
       "jid": "217184282357871@lid"
     },
     {
@@ -291,6 +551,7 @@
       "selected_position": null,
       "selected_date": null,
       "selected_time": null,
+      "candidate_name": null,
       "jid": "78971597271125@lid"
     },
     {
@@ -299,7 +560,53 @@
       "selected_position": null,
       "selected_date": null,
       "selected_time": null,
+      "candidate_name": null,
       "jid": "57256796233770@lid"
+    },
+    {
+      "phone_number": "204801472200958",
+      "step": "AWAITING_POSITION",
+      "selected_position": null,
+      "selected_date": null,
+      "selected_time": null,
+      "candidate_name": null,
+      "jid": "204801472200958@lid"
+    },
+    {
+      "phone_number": "263561339219987",
+      "step": "AWAITING_POSITION",
+      "selected_position": null,
+      "selected_date": null,
+      "selected_time": null,
+      "candidate_name": null,
+      "jid": "263561339219987@lid"
+    },
+    {
+      "phone_number": "9651412328582",
+      "step": "AWAITING_POSITION",
+      "selected_position": null,
+      "selected_date": null,
+      "selected_time": null,
+      "candidate_name": null,
+      "jid": "9651412328582@lid"
+    },
+    {
+      "phone_number": "55177813999754",
+      "step": "AWAITING_DATE",
+      "selected_position": "Desembolsador de Crédito",
+      "selected_date": null,
+      "selected_time": null,
+      "candidate_name": null,
+      "jid": "55177813999754@lid"
+    },
+    {
+      "phone_number": "83962970005600",
+      "step": "AWAITING_DATE",
+      "selected_position": "Promotor de Crédito",
+      "selected_date": null,
+      "selected_time": null,
+      "candidate_name": null,
+      "jid": "83962970005600@lid"
     }
   ]
 }

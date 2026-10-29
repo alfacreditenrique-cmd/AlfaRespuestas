@@ -113,11 +113,31 @@ app.get('/api/slots', (req, res) => {
   });
 });
 
+// Helper para normalizar citas (garantiza que phone_number siempre sea un teléfono real y no un @lid)
+function normalizeAppointment(apt) {
+  if (!apt) return null;
+  return {
+    ...apt,
+    phone_number: typeof database.resolvePhoneNumber === 'function'
+      ? database.resolvePhoneNumber(apt.phone_number, apt.jid)
+      : apt.phone_number
+  };
+}
+
 // 4. Listar citas con filtros y búsqueda
 app.get('/api/appointments', (req, res) => {
   const { search, date, position, status } = req.query;
   const list = database.listAppointments({ search, date, position, status });
-  res.json({ success: true, count: list.length, appointments: list });
+  const normalized = list.map(normalizeAppointment);
+  res.json({ success: true, count: normalized.length, appointments: normalized });
+});
+
+// Alias /api/citas requerido por R3
+app.get('/api/citas', (req, res) => {
+  const { search, date, position, status } = req.query;
+  const list = database.listAppointments({ search, date, position, status });
+  const normalized = list.map(normalizeAppointment);
+  res.json({ success: true, count: normalized.length, appointments: normalized });
 });
 
 // 5. Obtener una cita específica
@@ -126,7 +146,17 @@ app.get('/api/appointments/:id', (req, res) => {
   if (!appointment) {
     return res.status(404).json({ success: false, error: 'Cita no encontrada' });
   }
-  res.json({ success: true, appointment });
+  res.json({ success: true, appointment: normalizeAppointment(appointment) });
+});
+
+// Alias /api/citas/:id requerido por R3
+app.get('/api/citas/:id', (req, res) => {
+  const appointment = database.getAppointmentById(req.params.id);
+  if (!appointment) {
+    return res.status(404).json({ success: false, error: 'Cita no encontrada' });
+  }
+  const normalized = normalizeAppointment(appointment);
+  res.json({ success: true, appointment: normalized, cita: normalized });
 });
 
 // 6. Crear cita manualmente desde el panel
@@ -176,7 +206,7 @@ app.post('/api/appointments', async (req, res) => {
 
     res.status(201).json({
       success: true,
-      appointment,
+      appointment: normalizeAppointment(appointment),
       notificationSent,
       notificationError
     });
@@ -249,7 +279,7 @@ app.put('/api/appointments/:id', async (req, res) => {
     res.json({
       success: true,
       message: 'Cita actualizada y reprogramada correctamente',
-      appointment: updated,
+      appointment: normalizeAppointment(updated),
       notificationSent,
       notificationError
     });
@@ -284,7 +314,7 @@ app.delete('/api/appointments/:id', async (req, res) => {
     res.json({
       success: true,
       message: 'Cita cancelada y cupo liberado',
-      appointment,
+      appointment: normalizeAppointment(appointment),
       notificationSent
     });
   } catch (err) {
@@ -502,10 +532,14 @@ app.get('/api/export/excel', async (req, res) => {
       const dateLabel = scheduler.getDateLabel(apt.date);
       const time12h = scheduler.formatTime12h(apt.time_slot);
 
+      const resolvedPhone = typeof database.resolvePhoneNumber === 'function'
+        ? database.resolvePhoneNumber(apt.phone_number, apt.jid)
+        : apt.phone_number;
+
       const row = worksheet.addRow([
         apt.id,
         apt.candidate_name,
-        apt.phone_number,
+        resolvedPhone,
         apt.position,
         dateLabel,
         apt.time_slot,

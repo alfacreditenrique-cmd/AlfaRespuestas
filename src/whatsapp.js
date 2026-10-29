@@ -139,12 +139,59 @@ class WhatsAppService {
         }
       });
 
-      // Historial recibido al vincular: reconstruir citas desde los tickets que el bot ya envió
-      this.sock.ev.on('messaging-history.set', ({ messages }) => {
+      // Historial recibido al vincular: mapear contactos y reconstruir citas desde los tickets que el bot ya envió
+      this.sock.ev.on('messaging-history.set', ({ contacts, messages }) => {
+        try {
+          if (Array.isArray(contacts)) {
+            for (const c of contacts) {
+              const lid = c.lid || (c.id && c.id.endsWith('@lid') ? c.id : null);
+              const phone = c.jid ? c.jid.split('@')[0] : (c.id && c.id.endsWith('@s.whatsapp.net') ? c.id.split('@')[0] : null);
+              if (lid && phone && /^\d{8,11}$/.test(phone)) {
+                database.savePhoneMapping(lid, phone, 'history_sync');
+              }
+            }
+          }
+        } catch (e) {
+          console.error('[Phone Mapping] Error procesando contactos de historial:', e.message);
+        }
+
         try {
           this.recoverFromHistory(messages);
         } catch (e) {
           console.error('[Recuperación] Error procesando historial:', e.message);
+        }
+      });
+
+      // Ingestión de contactos para mapeo LID <-> Teléfono
+      this.sock.ev.on('contacts.upsert', (contacts) => {
+        try {
+          if (Array.isArray(contacts)) {
+            for (const c of contacts) {
+              const lid = c.lid || (c.id && c.id.endsWith('@lid') ? c.id : null);
+              const phone = c.jid ? c.jid.split('@')[0] : (c.id && c.id.endsWith('@s.whatsapp.net') ? c.id.split('@')[0] : null);
+              if (lid && phone && /^\d{8,11}$/.test(phone)) {
+                database.savePhoneMapping(lid, phone, 'contacts.upsert');
+              }
+            }
+          }
+        } catch (e) {
+          console.error('[Phone Mapping] Error en contacts.upsert:', e.message);
+        }
+      });
+
+      this.sock.ev.on('contacts.update', (updates) => {
+        try {
+          if (Array.isArray(updates)) {
+            for (const c of updates) {
+              const lid = c.lid || (c.id && c.id.endsWith('@lid') ? c.id : null);
+              const phone = c.jid ? c.jid.split('@')[0] : (c.id && c.id.endsWith('@s.whatsapp.net') ? c.id.split('@')[0] : null);
+              if (lid && phone && /^\d{8,11}$/.test(phone)) {
+                database.savePhoneMapping(lid, phone, 'contacts.update');
+              }
+            }
+          }
+        } catch (e) {
+          console.error('[Phone Mapping] Error en contacts.update:', e.message);
         }
       });
 
@@ -276,10 +323,14 @@ class WhatsAppService {
       if (m.ephemeralMessage?.message) m = m.ephemeralMessage.message;
       if (m.viewOnceMessage?.message) m = m.viewOnceMessage.message;
       if (m.viewOnceMessageV2?.message) m = m.viewOnceMessageV2.message;
+      if (m.documentWithCaptionMessage?.message) m = m.documentWithCaptionMessage.message;
 
       const text = (
         m.conversation ||
         m.extendedTextMessage?.text ||
+        m.imageMessage?.caption ||
+        m.documentMessage?.caption ||
+        m.videoMessage?.caption ||
         m.buttonsResponseMessage?.selectedButtonId ||
         m.listResponseMessage?.singleSelectReply?.selectedRowId ||
         m.templateButtonReplyMessage?.selectedId ||
@@ -290,24 +341,66 @@ class WhatsAppService {
 
       console.log(`[WhatsApp] 📩 Mensaje entrante de ${replyJid}: "${text}"`);
 
+      // Normalización de texto y eliminación de diacríticos para coincidencia robusta
+      const lowerText = text.toLowerCase();
+      const normalizedText = text
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim();
+
+      // =========================================================================
+      // REQUISITO R2: Detección y Redirección de Consultas de Crédito / Préstamos
+      // =========================================================================
+      const creditKeywords = /\b(credito|creditos|prestamo|prestamos|prestame|presten|prestenme|financiamiento|financiar|financiarme|prestar|prestarme|empeno|empenar|tasa|tasas|interes|intereses|cuota|cuotas)\b/i;
+      const employmentKeywords = /\b(vacante|vacantes|plaza|plazas|empleo|empleos|trabajo|trabajar|trabajando|laboral|laborales|postular|postularme|postularse|postulacion|postulaciones|postulante|postulantes|entrevista|entrevistas|cv|curriculum|curriculo|hoja de vida|hojas de vida|rrhh|recursos humanos|oficial de credito|promotor de credito|desembolsador de credito|desembolsador|contratacion|reclutamiento|seleccion|aplicar|aplicacion)\b/i;
+
+      const isCreditInquiry = creditKeywords.test(normalizedText) && !employmentKeywords.test(normalizedText);
+
+      if (isCreditInquiry) {
+        console.log(`[WhatsApp] 🚫 Consulta de crédito interceptada de ${replyJid}: "${text}". Redirigiendo a Call Center.`);
+        database.clearChatState(chatId);
+
+        const creditNotice =
+          `👋 ¡Hola! Gracias por comunicarte con *${CONFIG.COMPANY_NAME}*.\n\n` +
+          `ℹ️ Te informamos que este canal de WhatsApp está dedicado *exclusivamente al proceso de selección y entrevistas de trabajo* (Recursos Humanos).\n\n` +
+          `💰 Si deseas solicitar o consultar información sobre *créditos, préstamos o financiamiento*, por favor comunícate directamente con nuestro Call Center de Atención al Cliente a través del siguiente enlace:\n` +
+          `👉 ${CONFIG.CALL_CENTER_URL || 'https://wa.me/50558096263'}\n\n` +
+          `💼 Si estás interesado(a) en formar parte de nuestro equipo y postularte a una vacante laboral, por favor responde con la palabra *"EMPLEO"* o *"VACANTES"*.`;
+
+        await this.reply(replyJid, creditNotice);
+        return;
+      }
+
       // Intentar extraer teléfono real si WhatsApp lo comparte en metadatos
       let extractedPhone = null;
       if (!isLid) {
         extractedPhone = chatId;
       } else if (msg.key.senderPn) {
-        extractedPhone = msg.key.senderPn.split('@')[0].split(':')[0];
+        extractedPhone = msg.key.senderPn.split('@')[0].split(':')[0].replace(/[^0-9]/g, '');
+        database.savePhoneMapping(chatId, extractedPhone, 'senderPn');
       } else if (msg.key.participantPn) {
-        extractedPhone = msg.key.participantPn.split('@')[0].split(':')[0];
+        extractedPhone = msg.key.participantPn.split('@')[0].split(':')[0].replace(/[^0-9]/g, '');
+        database.savePhoneMapping(chatId, extractedPhone, 'participantPn');
       }
 
-      const lowerText = text.toLowerCase();
       let state = database.getChatState(chatId);
 
       // Comandos explícitos de reinicio / cancelación / menú
       const explicitResetWords = ['cancelar', 'menu', 'inicio', 'volver', 'empezar', 'reiniciar', 'reprogramar'];
-      const isExplicitReset = explicitResetWords.includes(lowerText);
+      const isExplicitReset = explicitResetWords.includes(lowerText) || explicitResetWords.includes(normalizedText);
 
-      if (isExplicitReset) {
+      // =========================================================================
+      // REQUISITO R1: Manejo de Intenciones de Consulta y Agendamiento
+      // =========================================================================
+      const inquiryKeywords = /\b(info|informacion|que necesito|requisitos|requisito|consulta|duda|ayuda|detalles|vacante|vacantes|plaza|plazas|empleo|empleos|trabajo|postular|postularme|postulacion)\b/i;
+      const schedulingKeywords = /\b(agendar|agenda|reagendar|reprogramar|cita|citas|turno|turnos)\b/i;
+      const isGeneralInquiryOrScheduling = inquiryKeywords.test(normalizedText) || schedulingKeywords.test(normalizedText);
+
+      // Si el usuario envía comando explícito de reinicio, o si estaba en un estado intermedio
+      // (AWAITING_DATE, AWAITING_NAME, AWAITING_PHONE) y envía una intención de consulta o agendamiento,
+      // se reinicia el estado para permitirle volver al menú principal o reprogramar.
+      if (isExplicitReset || (state && state.step !== 'AWAITING_POSITION' && isGeneralInquiryOrScheduling)) {
         database.clearChatState(chatId);
         state = null;
       }
@@ -315,7 +408,10 @@ class WhatsAppService {
       // Si no hay estado activo, verificar si ya tiene cita o enviar bienvenida
       if (!state || state.step === 'IDLE' || state.step === 'CONFIRMED') {
         const existingAppointment = database.getAppointmentByPhone(chatId) || (extractedPhone ? database.getAppointmentByPhone(extractedPhone) : null);
-        const isRescheduleIntent = ['reprogramar', 'reagendar', 'cambiar', 'cambiar cita', 'nueva cita', 'otra cita', 'reiniciar', 'agendar', 'agenda'].includes(lowerText);
+        const rescheduleWords = ['reprogramar', 'reagendar', 'cambiar', 'cambiar cita', 'nueva cita', 'otra cita', 'reiniciar', 'agendar', 'agenda'];
+        const isRescheduleIntent = rescheduleWords.includes(lowerText) ||
+          rescheduleWords.includes(normalizedText) ||
+          /\b(reprogramar|reagendar|cambiar\s+cita|nueva\s+cita|otra\s+cita|reiniciar|agendar|agenda)\b/i.test(normalizedText);
 
         // Si ya tiene cita activa y escribe una consulta regular (no reprogramación explícita)
         if (existingAppointment && !isRescheduleIntent) {
@@ -493,6 +589,10 @@ class WhatsAppService {
           return;
         }
 
+        if (typeof database.savePhoneMapping === 'function') {
+          database.savePhoneMapping(chatId, digits, 'user_input');
+        }
+
         await this.finalizeAppointment({
           chatId,
           replyJid,
@@ -589,8 +689,23 @@ class WhatsAppService {
       // Limpiar estado
       database.clearChatState(chatId);
 
-      // Notificar en tiempo real al panel web
-      this.emitEvent('new_appointment', appointment);
+      // Si es usuario LID, asegurar mapeo persistente
+      if (typeof database.savePhoneMapping === 'function' && phoneNumber) {
+        if (replyJid && replyJid.endsWith('@lid')) {
+          database.savePhoneMapping(replyJid, phoneNumber, 'appointment_confirmed');
+        } else if (chatId && chatId.length > 12) {
+          database.savePhoneMapping(chatId, phoneNumber, 'appointment_confirmed');
+        }
+      }
+
+      // Notificar en tiempo real al panel web con número normalizado
+      const normalizedApt = {
+        ...appointment,
+        phone_number: typeof database.resolvePhoneNumber === 'function'
+          ? database.resolvePhoneNumber(appointment.phone_number, appointment.jid)
+          : appointment.phone_number
+      };
+      this.emitEvent('new_appointment', normalizedApt);
 
       // Enviar ticket formal
       const ticket = scheduler.generateTicket(appointment);

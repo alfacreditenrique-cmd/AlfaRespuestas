@@ -32,7 +32,7 @@ test('Recuperación: reconstruye citas desde el historial de WhatsApp (normal, L
     msg('50555556666@s.whatsapp.net', true, ticket({ candidate_name: 'Rosa Díaz', position: 'Oficial de Crédito', date: '2025-11-04', time_slot: '09:15' })),
     msg('50555556666@s.whatsapp.net', true, scheduler.generateRescheduledNotice({ candidate_name: 'Rosa Díaz', position: 'Oficial de Crédito', date: '2025-11-04', time_slot: '09:15', status: 'cancelada' })),
     // 5) Fecha agregada en el panel que ya no existe
-    msg('50577778888@s.whatsapp.net', true, ticket({ candidate_name: 'Mario Ruiz', position: 'Oficial de Crédito', date: '2025-11-04', time_slot: '13:30' }).replace('Martes 4 de Noviembre', 'Jueves 6 de Noviembre')),
+    msg('50577778888@s.whatsapp.net', true, ticket({ candidate_name: 'Mario Ruiz', position: 'Oficial de Crédito', date: '2025-11-04', time_slot: '13:30' }).replace('Miércoles 4 de Noviembre', 'Viernes 6 de Noviembre')),
     // Mensaje del resumen al administrador: no es un ticket, se ignora
     msg('50575534509@s.whatsapp.net', true, '💾 *RESPALDO AUTOMÁTICO DE CITA*\n👤 *Postulante:* X Y\n⏰ *Hora:* 08:30 AM')
   ];
@@ -71,3 +71,40 @@ test('Recuperación: si el turno ya está ocupado, conserva la cita y la marca p
   assert.equal(recovered.length, 1);
   assert.match(recovered[0].notes, /TURNO COMPARTIDO/);
 });
+
+test('Recuperación: conciliación de candidato Ronald Espinoza desde mensaje con turno compartido y LID', () => {
+  // Simular cita existente previa en el mismo horario (Luis Carlos Delgado Rayo en 11:15)
+  database.createAppointment({
+    candidate_name: 'Luis Carlos Delgado Rayo',
+    phone_number: '50557376270',
+    position: 'Promotor de Crédito',
+    date: '2025-11-04',
+    time_slot: '11:15'
+  });
+
+  // Mensajes de Ronald Espinoza desde WhatsApp LID
+  const messages = [
+    msg('278490125480035@lid', false, 'Ronald Espinoza'),
+    msg('278490125480035@lid', false, '88990011'),
+    msg('278490125480035@lid', true, ticket({
+      candidate_name: 'Ronald Espinoza',
+      position: 'Oficial de Crédito',
+      date: '2025-11-04',
+      time_slot: '11:15'
+    }))
+  ];
+
+  const recovered = whatsappService.recoverFromHistory(messages);
+  assert.equal(recovered.length, 1, 'Debe recuperar la cita de Ronald Espinoza');
+  assert.match(recovered[0].candidate_name, /Ronald Espinoza/i);
+  assert.equal(recovered[0].position, 'Oficial de Crédito');
+  assert.equal(recovered[0].date, '2025-11-04');
+  assert.equal(recovered[0].time_slot, '11:15');
+  assert.match(recovered[0].notes, /TURNO COMPARTIDO/);
+
+  // La base de datos debe contener a ambos candidatos
+  const ronald = database.getAppointmentByPhone('50588990011');
+  assert.ok(ronald, 'Ronald Espinoza debe ser consultable por teléfono');
+  assert.equal(ronald.phone_number, '50588990011');
+});
+

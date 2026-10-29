@@ -27,8 +27,11 @@ test.after(async () => {
 });
 
 test.beforeEach(() => {
-  database.db.exec('DELETE FROM appointments; DELETE FROM chat_states; DELETE FROM audit_logs; DELETE FROM interview_dates;');
+  database.db.exec('DELETE FROM appointments; DELETE FROM chat_states; DELETE FROM audit_logs; DELETE FROM interview_dates; DELETE FROM phone_mappings;');
   database.initDatesSeed();
+  if (typeof database.initPhoneMappingsSeed === 'function') {
+    database.initPhoneMappingsSeed();
+  }
 });
 
 test('API: GET /api/status retorna configuración y estado del sistema', async () => {
@@ -228,4 +231,120 @@ test('Frontend HTML: Estructura de modales no anidados (datesModal independiente
   assert.ok(fragmentBetween.includes('</form>'), 'El formulario de newModal debe estar cerrado');
   assert.ok(fragmentBetween.endsWith('</div>\n\n  <!-- MODAL PARA GESTIÓN DE FECHAS DE ENTREVISTA -->\n  <div ') || fragmentBetween.includes('</div>\n  </div>\n\n  <!-- MODAL PARA GESTIÓN DE FECHAS DE ENTREVISTA -->'), 'newModal debe tener ambos </div> de cierre antes de datesModal');
 });
+
+test('API: GET /api/citas retorna 200 con listado de citas y conteo', async () => {
+  database.createAppointment({
+    candidate_name: 'Marcos Benavides',
+    phone_number: '50588889999',
+    position: 'Oficial de Crédito',
+    date: '2025-11-04',
+    time_slot: '09:00'
+  });
+
+  const res = await fetch(`${baseUrl}/api/citas`);
+  assert.equal(res.status, 200, 'GET /api/citas debe responder con status 200');
+  const data = await res.json();
+  assert.equal(data.success, true);
+  assert.equal(typeof data.count, 'number');
+  assert.ok(Array.isArray(data.appointments));
+  assert.ok(data.appointments.length >= 1);
+  const found = data.appointments.find(a => a.candidate_name === 'Marcos Benavides');
+  assert.ok(found);
+  assert.equal(found.phone_number, '50588889999');
+});
+
+test('API: Todas las citas en /api/citas y /api/appointments tienen número telefónico numérico válido (sin @lid)', async () => {
+  database.savePhoneMapping('112233445566778', '50587776655', 'test_seed');
+
+  database.createAppointment({
+    candidate_name: 'Candidato Estandard',
+    phone_number: '88881122',
+    jid: '50588881122@s.whatsapp.net',
+    position: 'Oficial de Crédito',
+    date: '2025-11-04',
+    time_slot: '08:30'
+  });
+
+  database.createAppointment({
+    candidate_name: 'Candidato LID Mapeado',
+    phone_number: '112233445566778',
+    jid: '112233445566778@lid',
+    position: 'Promotor de Crédito',
+    date: '2025-11-04',
+    time_slot: '08:45'
+  });
+
+  database.createAppointment({
+    candidate_name: 'Candidato LID No Mapeado',
+    phone_number: '998877665544332',
+    jid: '998877665544332@lid',
+    position: 'Desembolsador de Crédito',
+    date: '2025-11-04',
+    time_slot: '09:00'
+  });
+
+  for (const endpoint of ['/api/citas', '/api/appointments']) {
+    const res = await fetch(`${baseUrl}${endpoint}`);
+    assert.equal(res.status, 200);
+    const data = await res.json();
+    assert.ok(data.appointments.length >= 3);
+
+    for (const apt of data.appointments) {
+      assert.ok(!apt.phone_number.includes('@lid'), `phone_number "${apt.phone_number}" en ${endpoint} no debe contener @lid`);
+      assert.ok(!apt.phone_number.includes('@s.whatsapp.net'), `phone_number "${apt.phone_number}" no debe contener @s.whatsapp.net`);
+      assert.ok(
+        /^\d{8,11}$/.test(apt.phone_number) || /^(?:\+?505)?[2578]\d{7}$/.test(apt.phone_number),
+        `phone_number "${apt.phone_number}" en ${endpoint} debe tener formato numérico válido de 8 a 11 dígitos`
+      );
+      assert.ok(apt.phone_number.length <= 12, `phone_number "${apt.phone_number}" no debe exceder 12 dígitos (LID sin normalizar)`);
+    }
+  }
+});
+
+test('API: Cita almacenada con @lid devuelve en /api/citas su número telefónico real normalizado', async () => {
+  const testLid = '445566778899001';
+  const realPhone = '50583334444';
+  database.savePhoneMapping(testLid, realPhone, 'whatsapp_sync');
+
+  database.createAppointment({
+    candidate_name: 'Valeria Solórzano',
+    phone_number: testLid,
+    jid: `${testLid}@lid`,
+    position: 'Oficial de Crédito',
+    date: '2025-11-04',
+    time_slot: '09:30'
+  });
+
+  const res = await fetch(`${baseUrl}/api/citas`);
+  assert.equal(res.status, 200);
+  const data = await res.json();
+  const found = data.appointments.find(a => a.candidate_name === 'Valeria Solórzano');
+  assert.ok(found, 'La cita de Valeria Solórzano debe existir');
+  assert.equal(found.phone_number, realPhone, 'El número retornado debe ser el teléfono mapeado real');
+});
+
+test('API: Citas existentes con @s.whatsapp.net retienen sus números telefónicos válidos', async () => {
+  database.createAppointment({
+    candidate_name: 'Javier Argeñal',
+    phone_number: '50587654321',
+    jid: '50587654321@s.whatsapp.net',
+    position: 'Promotor de Crédito',
+    date: '2025-11-04',
+    time_slot: '09:45'
+  });
+
+  const res = await fetch(`${baseUrl}/api/citas`);
+  assert.equal(res.status, 200);
+  const data = await res.json();
+  const found = data.appointments.find(a => a.candidate_name === 'Javier Argeñal');
+  assert.ok(found);
+  assert.equal(found.phone_number, '50587654321');
+
+  // Verificar también en /api/citas/:id
+  const singleRes = await fetch(`${baseUrl}/api/citas/${found.id}`);
+  assert.equal(singleRes.status, 200);
+  const singleData = await singleRes.json();
+  assert.equal(singleData.appointment.phone_number, '50587654321');
+});
+
 

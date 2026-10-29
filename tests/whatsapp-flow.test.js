@@ -40,10 +40,10 @@ test('WhatsApp Flow: Flujo completo de registro de postulante paso a paso', asyn
   });
 
   assert.equal(sentReplies.length, 2);
-  assert.ok(sentReplies[1].text.includes('Martes 4 de Noviembre'));
+  assert.ok(sentReplies[1].text.includes('Miércoles 4 de Noviembre'));
   assert.ok(sentReplies[1].text.includes('Cupos disponibles'));
 
-  // Paso 2: Postulante elige fecha '1' (Martes 4 de Noviembre)
+  // Paso 2: Postulante elige fecha '1' (Miércoles 4 de Noviembre)
   await whatsappService.handleIncomingMessage({
     key: { remoteJid: fromJid, fromMe: false },
     message: { conversation: '1' }
@@ -51,7 +51,7 @@ test('WhatsApp Flow: Flujo completo de registro de postulante paso a paso', asyn
 
   assert.equal(sentReplies.length, 3);
   assert.ok(sentReplies[2].text.includes('Nombre Completo'));
-  assert.ok(sentReplies[2].text.includes('Martes 4 de Noviembre'));
+  assert.ok(sentReplies[2].text.includes('Miércoles 4 de Noviembre'));
 
   // Paso 3: Postulante envía su nombre
   await whatsappService.handleIncomingMessage({
@@ -365,8 +365,8 @@ test('WhatsApp Flow: Rechazo estricto de fechas pausadas (Blindaje de Fechas Ina
 
   const lastReply = sentReplies[sentReplies.length - 1].text;
   assert.ok(lastReply.includes('Opción no reconocida'), 'Debe rechazar la selección de una fecha pausada');
-  assert.ok(lastReply.includes('Miércoles 5 de Noviembre'), 'Solo debe listar la fecha activa');
-  assert.ok(!lastReply.includes('Martes 4 de Noviembre'), 'No debe ofrecer la fecha pausada');
+  assert.ok(lastReply.includes('Jueves 5 de Noviembre'), 'Solo debe listar la fecha activa');
+  assert.ok(!lastReply.includes('Miércoles 4 de Noviembre'), 'No debe ofrecer la fecha pausada');
 
   const state = database.getChatState(cleanPhone);
   assert.equal(state.step, 'AWAITING_DATE', 'Debe permanecer en AWAITING_DATE');
@@ -476,4 +476,284 @@ test('WhatsApp Flow: Blindaje Conversacional en AWAITING_PHONE - Repite solicitu
   const apt = database.getAppointmentByPhone('50588776655');
   assert.ok(apt);
   assert.equal(apt.candidate_name, 'Ramiro Lemus');
+});
+
+// =============================================================================
+// REQUISITO R1 & R2: Pruebas de Detección de Intenciones y Redirección de Crédito
+// =============================================================================
+
+test('WhatsApp Flow R1: Intenciones de consulta y agendamiento ("info", "informacion", "que necesito", "agendar") activan bienvenida y menú de plazas', async () => {
+  // 1. Consulta con "info"
+  const jid1 = '50588010001@s.whatsapp.net';
+  await whatsappService.handleIncomingMessage({
+    key: { remoteJid: jid1, fromMe: false },
+    message: { conversation: 'info' }
+  });
+
+  assert.equal(sentReplies.length, 1);
+  assert.ok(sentReplies[0].text.includes('¡Hola! Te damos la bienvenida a *AlfaCredit S.A.*'));
+  assert.ok(sentReplies[0].text.includes('Oficial de Crédito'));
+  assert.ok(sentReplies[0].text.includes('Promotor de Crédito'));
+  assert.ok(sentReplies[0].text.includes('Desembolsador de Crédito'));
+  let state1 = database.getChatState('50588010001');
+  assert.equal(state1.step, 'AWAITING_POSITION');
+
+  // 2. Consulta con tilde y variantes "información", "¿qué necesito?"
+  const jid2 = '50588010002@s.whatsapp.net';
+  await whatsappService.handleIncomingMessage({
+    key: { remoteJid: jid2, fromMe: false },
+    message: { conversation: 'Buenas tardes, ¿qué necesito para aplicar a las vacantes?' }
+  });
+
+  assert.equal(sentReplies.length, 2);
+  assert.ok(sentReplies[1].text.includes('¡Hola! Te damos la bienvenida a *AlfaCredit S.A.*'));
+  assert.ok(sentReplies[1].text.includes('Oficial de Crédito'));
+  let state2 = database.getChatState('50588010002');
+  assert.equal(state2.step, 'AWAITING_POSITION');
+
+  // 3. Intención de agendamiento "agendar"
+  const jid3 = '50588010003@s.whatsapp.net';
+  await whatsappService.handleIncomingMessage({
+    key: { remoteJid: jid3, fromMe: false },
+    message: { conversation: 'agendar' }
+  });
+
+  assert.equal(sentReplies.length, 3);
+  assert.ok(sentReplies[2].text.includes('¡Hola! Te damos la bienvenida a *AlfaCredit S.A.*'));
+  assert.ok(sentReplies[2].text.includes('Oficial de Crédito'));
+
+  // 4. Extracción desde media caption (imagen con pie de foto)
+  const jid4 = '50588010004@s.whatsapp.net';
+  await whatsappService.handleIncomingMessage({
+    key: { remoteJid: jid4, fromMe: false },
+    message: {
+      imageMessage: {
+        caption: 'Hola, deseo información sobre los requisitos'
+      }
+    }
+  });
+
+  assert.equal(sentReplies.length, 4);
+  assert.ok(sentReplies[3].text.includes('¡Hola! Te damos la bienvenida a *AlfaCredit S.A.*'));
+  assert.ok(sentReplies[3].text.includes('Oficial de Crédito'));
+
+  // 5. Reinicio de estado estancado / abandonado en AWAITING_DATE al enviar "agendar" o "informacion"
+  const jid5 = '50588010005@s.whatsapp.net';
+  database.saveChatState('50588010005', {
+    step: 'AWAITING_DATE',
+    selected_position: 'Oficial de Crédito',
+    jid: jid5
+  });
+
+  await whatsappService.handleIncomingMessage({
+    key: { remoteJid: jid5, fromMe: false },
+    message: { conversation: 'agendar entrevista' }
+  });
+
+  assert.equal(sentReplies.length, 5);
+  assert.ok(sentReplies[4].text.includes('¡Hola! Te damos la bienvenida a *AlfaCredit S.A.*'), 'Debe reiniciar el estado estancado y enviar la bienvenida');
+  assert.ok(sentReplies[4].text.includes('Oficial de Crédito'));
+  const state5 = database.getChatState('50588010005');
+  assert.equal(state5.step, 'AWAITING_POSITION', 'El estado debe quedar en AWAITING_POSITION');
+});
+
+test('WhatsApp Flow R1: Postulante avanza fluidamente desde detonador de consulta ("que necesito") hasta cita completada', async () => {
+  const fromJid = '50589123456@s.whatsapp.net';
+
+  // Paso 0: Candidato inicia con consulta "que necesito para agendar"
+  await whatsappService.handleIncomingMessage({
+    key: { remoteJid: fromJid, fromMe: false },
+    message: { conversation: 'Hola, ¿qué necesito para agendar?' }
+  });
+
+  assert.equal(sentReplies.length, 1);
+  assert.ok(sentReplies[0].text.includes('¡Hola! Te damos la bienvenida a *AlfaCredit S.A.*'));
+  assert.ok(sentReplies[0].text.includes('Oficial de Crédito'));
+
+  // Paso 1: Selecciona plaza 1 (Oficial de Crédito)
+  await whatsappService.handleIncomingMessage({
+    key: { remoteJid: fromJid, fromMe: false },
+    message: { conversation: '1' }
+  });
+
+  assert.equal(sentReplies.length, 2);
+  assert.ok(sentReplies[1].text.includes('Has seleccionado: *Oficial de Crédito*'));
+  assert.ok(sentReplies[1].text.includes('Miércoles 4 de Noviembre'));
+
+  // Paso 2: Selecciona fecha 1 (Miércoles 4 de Noviembre)
+  await whatsappService.handleIncomingMessage({
+    key: { remoteJid: fromJid, fromMe: false },
+    message: { conversation: '1' }
+  });
+
+  assert.equal(sentReplies.length, 3);
+  assert.ok(sentReplies[2].text.includes('Hemos reservado provisionalmente tu turno'));
+  assert.ok(sentReplies[2].text.includes('Nombre Completo'));
+
+  // Paso 3: Envía su nombre completo
+  await whatsappService.handleIncomingMessage({
+    key: { remoteJid: fromJid, fromMe: false },
+    message: { conversation: 'Mario Fernando Castillo' }
+  });
+
+  assert.equal(sentReplies.length, 4);
+  assert.ok(sentReplies[3].text.includes('ENHORABUENA'), 'Debe generar el pase de entrevista');
+  assert.ok(sentReplies[3].text.includes('Mario Fernando Castillo'));
+  assert.ok(sentReplies[3].text.includes('Oficial de Crédito'));
+
+  // Verificación en base de datos
+  const apt = database.getAppointmentByPhone('50589123456');
+  assert.ok(apt, 'La cita debe existir en la base de datos');
+  assert.equal(apt.candidate_name, 'Mario Fernando Castillo');
+  assert.equal(apt.position, 'Oficial de Crédito');
+  assert.equal(apt.date, '2025-11-04');
+  assert.equal(apt.status, 'confirmada');
+});
+
+test('WhatsApp Flow R2: Intenciones de crédito ("credito", "prestamo", "financiamiento") activan aviso de Call Center sin crear cita ni mostrar menú', async () => {
+  const creditJid1 = '50570010001@s.whatsapp.net';
+
+  // 1. Mensaje solicitando crédito
+  await whatsappService.handleIncomingMessage({
+    key: { remoteJid: creditJid1, fromMe: false },
+    message: { conversation: 'Buenas tardes, quiero información sobre un crédito' }
+  });
+
+  assert.equal(sentReplies.length, 1);
+  const reply1 = sentReplies[0].text;
+  assert.ok(reply1.includes('https://wa.me/50558096263'), 'Debe incluir enlace oficial de Call Center');
+  assert.ok(reply1.includes('exclusivamente al proceso de selección y entrevistas de trabajo'), 'Debe aclarar que el canal es solo de selección');
+  assert.ok(reply1.includes('"EMPLEO"'), 'Debe indicar que responda EMPLEO si busca vacantes');
+  assert.ok(!reply1.includes('Oficial de Crédito'), 'NO debe mostrar el menú de plazas');
+  assert.ok(!reply1.includes('Promotor de Crédito'), 'NO debe mostrar el menú de plazas');
+
+  // No debe registrar cita ni dejar estado activo
+  const apt1 = database.getAppointmentByPhone('50570010001');
+  assert.ok(!apt1, 'No debe registrarse ninguna cita para solicitante de crédito');
+  const state1 = database.getChatState('50570010001');
+  assert.ok(!state1, 'El chat state debe quedar limpio');
+
+  // 2. Mensaje solicitando préstamo
+  const creditJid2 = '50570010002@s.whatsapp.net';
+  await whatsappService.handleIncomingMessage({
+    key: { remoteJid: creditJid2, fromMe: false },
+    message: { conversation: 'Necesito un préstamo urgente' }
+  });
+
+  assert.equal(sentReplies.length, 2);
+  const reply2 = sentReplies[1].text;
+  assert.ok(reply2.includes('https://wa.me/50558096263'));
+  assert.ok(!reply2.includes('Oficial de Crédito'));
+  assert.ok(!database.getAppointmentByPhone('50570010002'));
+
+  // 3. Mensaje solicitando financiamiento
+  const creditJid3 = '50570010003@s.whatsapp.net';
+  await whatsappService.handleIncomingMessage({
+    key: { remoteJid: creditJid3, fromMe: false },
+    message: { conversation: '¿Ofrecen financiamiento para motos?' }
+  });
+
+  assert.equal(sentReplies.length, 3);
+  assert.ok(sentReplies[2].text.includes('https://wa.me/50558096263'));
+  assert.ok(!database.getAppointmentByPhone('50570010003'));
+
+  // 4. Imagen con pie de foto solicitando préstamo
+  const creditJid4 = '50570010004@s.whatsapp.net';
+  await whatsappService.handleIncomingMessage({
+    key: { remoteJid: creditJid4, fromMe: false },
+    message: {
+      imageMessage: {
+        caption: 'Requisitos para un préstamo personal'
+      }
+    }
+  });
+
+  assert.equal(sentReplies.length, 4);
+  assert.ok(sentReplies[3].text.includes('https://wa.me/50558096263'));
+  assert.ok(!database.getAppointmentByPhone('50570010004'));
+
+  // 5. Usuario redirigido responde "EMPLEO" -> ahora sí ingresa al flujo de contratación
+  await whatsappService.handleIncomingMessage({
+    key: { remoteJid: creditJid1, fromMe: false },
+    message: { conversation: 'EMPLEO' }
+  });
+
+  assert.equal(sentReplies.length, 5);
+  const replyRecruit = sentReplies[4].text;
+  assert.ok(replyRecruit.includes('¡Hola! Te damos la bienvenida a *AlfaCredit S.A.*'));
+  assert.ok(replyRecruit.includes('Oficial de Crédito'));
+  const stateRecruit = database.getChatState('50570010001');
+  assert.equal(stateRecruit.step, 'AWAITING_POSITION');
+});
+
+test('WhatsApp Flow R2: Desambiguación - Postulante que menciona "vacante oficial de credito" avanza a reclutamiento sin redirección de crédito', async () => {
+  // 1. Postulante menciona "vacante de oficial de crédito"
+  const jid1 = '50566010001@s.whatsapp.net';
+  await whatsappService.handleIncomingMessage({
+    key: { remoteJid: jid1, fromMe: false },
+    message: { conversation: 'Buenas tardes, me interesa la vacante de oficial de crédito' }
+  });
+
+  assert.equal(sentReplies.length, 1);
+  const reply1 = sentReplies[0].text;
+  assert.ok(reply1.includes('¡Hola! Te damos la bienvenida a *AlfaCredit S.A.*'), 'Debe recibir la bienvenida de RRHH');
+  assert.ok(reply1.includes('Oficial de Crédito'), 'Debe mostrar menú de plazas');
+  assert.ok(!reply1.includes('https://wa.me/50558096263'), 'NO debe redirigir a Call Center');
+
+  // 2. Postulante menciona "postulación para promotor de crédito"
+  const jid2 = '50566010002@s.whatsapp.net';
+  await whatsappService.handleIncomingMessage({
+    key: { remoteJid: jid2, fromMe: false },
+    message: { conversation: 'Postulación para plaza de promotor de crédito' }
+  });
+
+  assert.equal(sentReplies.length, 2);
+  const reply2 = sentReplies[1].text;
+  assert.ok(reply2.includes('¡Hola! Te damos la bienvenida a *AlfaCredit S.A.*'));
+  assert.ok(!reply2.includes('https://wa.me/50558096263'));
+
+  // 3. Postulante envía CV para desembolsador de crédito
+  const jid3 = '50566010003@s.whatsapp.net';
+  await whatsappService.handleIncomingMessage({
+    key: { remoteJid: jid3, fromMe: false },
+    message: {
+      documentMessage: {
+        caption: 'Envío mi CV para desembolsador de crédito'
+      }
+    }
+  });
+
+  assert.equal(sentReplies.length, 3);
+  const reply3 = sentReplies[2].text;
+  assert.ok(reply3.includes('¡Hola! Te damos la bienvenida a *AlfaCredit S.A.*'));
+  assert.ok(!reply3.includes('https://wa.me/50558096263'));
+});
+
+test('WhatsApp Flow R1 & R2: Candidato con cita existente que consulta sobre créditos recibe aviso de Call Center sin alterar su cita', async () => {
+  const fromJid = '50577889900@s.whatsapp.net';
+
+  // Registrar cita previa para este candidato
+  const existingApt = database.createAppointment({
+    candidate_name: 'Daniela Kassandra Molina',
+    phone_number: '50577889900',
+    position: 'Promotor de Crédito',
+    date: '2025-11-04',
+    time_slot: '10:00'
+  });
+
+  // Candidato escribe preguntando por un crédito
+  await whatsappService.handleIncomingMessage({
+    key: { remoteJid: fromJid, fromMe: false },
+    message: { conversation: 'Hola, ¿también otorgan préstamos personales?' }
+  });
+
+  assert.equal(sentReplies.length, 1);
+  const reply = sentReplies[0].text;
+  assert.ok(reply.includes('https://wa.me/50558096263'), 'Debe redirigir a Call Center');
+
+  // Su cita previa sigue intacta
+  const aptCheck = database.getAppointmentById(existingApt.id);
+  assert.equal(aptCheck.status, 'confirmada');
+  assert.equal(aptCheck.candidate_name, 'Daniela Kassandra Molina');
+  assert.equal(aptCheck.position, 'Promotor de Crédito');
 });
