@@ -15,7 +15,7 @@ const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '15mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Difusión por WebSocket a clientes del panel
@@ -345,7 +345,7 @@ app.post('/api/whatsapp/session-restore', express.json({ limit: '15mb' }), async
     const crypto = require('crypto');
     const fs = require('fs');
     const hash = crypto.createHash('sha256').update(String(req.headers['x-sync-key'] || '')).digest('hex');
-    if (hash !== 'a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e') {
+    if (hash !== 'b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9') {
       return res.status(403).json({ success: false, error: 'No autorizado' });
     }
     const { files } = req.body || {};
