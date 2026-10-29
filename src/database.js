@@ -9,17 +9,6 @@ if (!fs.existsSync(dbDir)) {
   fs.mkdirSync(dbDir, { recursive: true });
 }
 
-// Auto-seed: si la BD de destino no existe pero existe la del repositorio, copiarla para no perder citas
-const repoDbPath = path.join(__dirname, '..', 'data', 'alfa_citas.sqlite');
-if (path.resolve(CONFIG.DB_PATH) !== path.resolve(repoDbPath) && !fs.existsSync(CONFIG.DB_PATH) && fs.existsSync(repoDbPath)) {
-  try {
-    fs.copyFileSync(repoDbPath, CONFIG.DB_PATH);
-    console.log('✅ Base de datos sincronizada desde el repositorio a:', CONFIG.DB_PATH);
-  } catch (err) {
-    console.error('Error al sincronizar base de datos inicial:', err.message);
-  }
-}
-
 const db = new DatabaseSync(CONFIG.DB_PATH);
 
 // Configuración de performance y consistencia (WAL mode)
@@ -104,13 +93,13 @@ try { db.exec(`ALTER TABLE chat_states ADD COLUMN jid TEXT;`); } catch {}
 const database = {
   db,
 
-  // Crear cita
-  createAppointment({ candidate_name, phone_number, position, date, time_slot, notes = '', jid = null }) {
+  // Crear cita (recovery = restaurar una cita ya comunicada al postulante: no se rechaza por fecha pausada ni turno ocupado)
+  createAppointment({ candidate_name, phone_number, position, date, time_slot, notes = '', jid = null, recovery = false }) {
     const trimmedDate = date.trim();
     const trimmedTime = time_slot.trim();
 
     // Validar fecha y horario conforme a la configuración corporativa (fechas activas)
-    const validDateIds = this.getActiveDates().map(d => d.id);
+    const validDateIds = (recovery ? this.listDates() : this.getActiveDates()).map(d => d.id);
     if (!validDateIds.includes(trimmedDate)) {
       throw new Error(`Fecha inválida: ${trimmedDate}. Las fechas permitidas son: ${validDateIds.join(', ')}`);
     }
@@ -118,7 +107,7 @@ const database = {
       throw new Error(`Horario inválido: ${trimmedTime}. No pertenece a los turnos autorizados de 15 minutos.`);
     }
 
-    if (this.isSlotTaken(trimmedDate, trimmedTime)) {
+    if (!recovery && this.isSlotTaken(trimmedDate, trimmedTime)) {
       throw new Error(`El turno del ${trimmedDate} a las ${trimmedTime} ya se encuentra ocupado.`);
     }
 

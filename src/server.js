@@ -9,7 +9,6 @@ const CONFIG = require('./config');
 const database = require('./database');
 const scheduler = require('./scheduler');
 const whatsappService = require('./whatsapp');
-const backupManager = require('./gitBackup');
 
 const app = express();
 const server = http.createServer(app);
@@ -410,16 +409,6 @@ app.get('/api/backup/download', (req, res) => {
   }
 });
 
-// 14.1 Sincronizar respaldo de base de datos a GitHub automáticamente
-app.post('/api/backup/sync-github', async (req, res) => {
-  try {
-    const result = await backupManager.syncToGitHub('sincronizacion_desde_panel');
-    res.json({ success: true, result });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
 // 15. EXPORTACIÓN PROFESIONAL A EXCEL (.xlsx)
 app.get('/api/export/excel', async (req, res) => {
   try {
@@ -580,16 +569,6 @@ function startServer() {
 
     // Iniciar cliente de WhatsApp
     whatsappService.start();
-
-    // Respaldo periódico automático cada 30 minutos
-    setInterval(() => {
-      try {
-        database.createBackup();
-        backupManager.syncToGitHub('respaldo_automatico_programado').catch(() => {});
-      } catch (e) {
-        console.warn('[AutoBackup] Error en respaldo periódico:', e.message);
-      }
-    }, 30 * 60 * 1000);
   });
 }
 

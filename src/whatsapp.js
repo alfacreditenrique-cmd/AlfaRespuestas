@@ -4,7 +4,8 @@ const {
   DisconnectReason,
   fetchLatestBaileysVersion,
   jidNormalizedUser,
-  isLidUser
+  isLidUser,
+  Browsers
 } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const QRCode = require('qrcode');
@@ -13,7 +14,8 @@ const path = require('path');
 const CONFIG = require('./config');
 const database = require('./database');
 const scheduler = require('./scheduler');
-const backupManager = require('./gitBackup');
+
+const MONTHS_ES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
 class WhatsAppService {
   constructor() {
@@ -77,8 +79,9 @@ class WhatsAppService {
         auth: state,
         logger,
         printQRInTerminal: false,
-        syncFullHistory: false,
-        browser: ['AlfaCredit Bot', 'Chrome', '1.0.0'],
+        // Historial completo: al vincular el QR, WhatsApp envía los chats y así se recuperan las citas ya confirmadas
+        syncFullHistory: true,
+        browser: Browsers.macOS('Desktop'),
         connectTimeoutMs: 60000,
         keepAliveIntervalMs: 25000,
         defaultQueryTimeoutMs: 60000
@@ -137,8 +140,25 @@ class WhatsAppService {
         }
       });
 
+      // Historial recibido al vincular: reconstruir citas desde los tickets que el bot ya envió
+      this.sock.ev.on('messaging-history.set', ({ messages }) => {
+        try {
+          this.recoverFromHistory(messages);
+        } catch (e) {
+          console.error('[Recuperación] Error procesando historial:', e.message);
+        }
+      });
+
       // Mensajes entrantes
       this.sock.ev.on('messages.upsert', async (chatUpdate) => {
+        if (chatUpdate.type === 'append') {
+          try {
+            this.recoverFromHistory(chatUpdate.messages);
+          } catch (e) {
+            console.error('[Recuperación] Error procesando historial append:', e.message);
+          }
+          return;
+        }
         if (chatUpdate.type !== 'notify') return;
 
         for (const msg of chatUpdate.messages) {
@@ -596,12 +616,96 @@ class WhatsAppService {
         }
       }
 
-      // Sincronización automática a GitHub en segundo plano
-      backupManager.syncToGitHub(`nueva cita #${appointment.id} (${appointment.candidate_name})`).catch(() => {});
     } catch (err) {
       console.error('[WhatsApp] Error agendando cita:', err.message);
       await this.reply(replyJid, `⚠️ Ocurrió un inconveniente al registrar tu cita (${err.message}). Por favor responde con *"REINICIAR"* para volver a seleccionar tu turno.`);
     }
+  }
+
+  // Reconstruye citas a partir de los tickets/avisos que el bot envió (historial de WhatsApp).
+  // Idempotente: no duplica citas que ya existen para ese chat o teléfono.
+  recoverFromHistory(messages = []) {
+    const getText = (m) => {
+      let x = m.message || {};
+      x = x.ephemeralMessage?.message || x;
+      return x.conversation || x.extendedTextMessage?.text || '';
+    };
+
+    // Último estado conocido por chat, en orden cronológico
+    const chats = new Map();
+    const sorted = [...messages].sort((a, b) => Number(a.messageTimestamp || 0) - Number(b.messageTimestamp || 0));
+    for (const m of sorted) {
+      const jid = m.key?.remoteJid ? jidNormalizedUser(m.key.remoteJid) : '';
+      if (!/@(s\.whatsapp\.net|lid)$/.test(jid)) continue;
+      const text = getText(m);
+      if (!text) continue;
+      const chat = chats.get(jid) || { phone: null, apt: null };
+
+      if (!m.key.fromMe) {
+        // Teléfono que el postulante escribió cuando el bot se lo pidió
+        const digits = text.replace(/\D/g, '');
+        if (/^[\d\s+\-()]+$/.test(text.trim()) && digits.length >= 8 && digits.length <= 15) chat.phone = digits;
+      } else if (text.includes('NOTIFICACIÓN DE CANCELACIÓN')) {
+        chat.apt = null;
+      } else if (text.includes('CITA CONFIRMADA') || text.includes('AVISO DE ACTUALIZACIÓN')) {
+        const name = (text.match(/\*Postulante:\*\s*(.+)/) || text.match(/Estimado\(a\)\s*\*(.+?)\*/) || [])[1];
+        const position = (text.match(/\*Plaza:\*\s*(.+)/) || [])[1];
+        const label = (text.match(/\*Fecha:\*\s*(.+)/) || [])[1];
+        const time = (text.match(/\*Hora:\*.*\((\d{2}:\d{2})\)/) || [])[1];
+        const date = label && this.resolveDateLabel(label.trim());
+        if (name && position && date && time) {
+          chat.apt = { candidate_name: name.trim(), position: position.trim(), date, time_slot: time };
+        }
+      }
+      chats.set(jid, chat);
+    }
+
+    const recovered = [];
+    for (const [jid, chat] of chats) {
+      if (!chat.apt) continue;
+      const phone = jid.endsWith('@s.whatsapp.net') ? jid.split('@')[0] : (chat.phone || jid.split('@')[0]);
+      if (database.getAppointmentByPhone(jid) || database.getAppointmentByPhone(phone)) continue;
+      try {
+        const shared = database.isSlotTaken(chat.apt.date, chat.apt.time_slot);
+        const apt = database.createAppointment({
+          ...chat.apt,
+          phone_number: phone,
+          jid,
+          recovery: true,
+          notes: 'Recuperada del historial de WhatsApp' + (shared ? ' ⚠️ TURNO COMPARTIDO CON OTRA CITA, REVISAR' : '')
+        });
+        recovered.push(apt);
+        this.emitEvent('new_appointment', apt);
+      } catch (e) {
+        console.error(`[Recuperación] No se pudo recuperar la cita de ${jid}:`, e.message);
+      }
+    }
+
+    if (recovered.length) {
+      console.log(`♻️ [Recuperación] ${recovered.length} cita(s) restauradas desde el historial de WhatsApp.`);
+      if (CONFIG.ADMIN_PHONE) {
+        this.sendMessage(CONFIG.ADMIN_PHONE,
+          `♻️ *RECUPERACIÓN AUTOMÁTICA - ${CONFIG.COMPANY_NAME}*\n\n` +
+          `Se restauraron *${recovered.length}* cita(s) desde el historial de WhatsApp:\n\n` +
+          recovered.map(a => `• ${a.candidate_name} - ${scheduler.getDateLabel(a.date)} ${scheduler.formatTime12h(a.time_slot)}`).join('\n')
+        ).catch(() => {});
+      }
+    }
+    return recovered;
+  }
+
+  // Convierte "Jueves 6 de Noviembre" en el id de fecha; si la fecha no existe (agregada en el panel y perdida), la recrea
+  resolveDateLabel(label) {
+    const all = database.listDates();
+    const found = all.find(d => d.label.toLowerCase() === label.toLowerCase());
+    if (found) return found.id;
+    const m = label.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').match(/(\d{1,2})\s+de\s+([a-z]+)/);
+    const month = m ? MONTHS_ES.indexOf(m[2]) + 1 : 0;
+    if (!month) return null;
+    const year = (CONFIG.DATES[0]?.id || '2025').slice(0, 4);
+    const id = `${year}-${String(month).padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+    if (!all.find(d => d.id === id)) database.addDate({ id, label });
+    return id;
   }
 
   async reply(jid, text) {
