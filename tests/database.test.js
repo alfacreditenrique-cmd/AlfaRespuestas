@@ -385,3 +385,40 @@ test('Database & Session: Verificación de integridad de credenciales de WhatsAp
   assert.ok(creds.signedPreKey, 'signedPreKey debe estar presente');
 });
 
+test('WhatsApp Session: Re-vinculación freshRegistration persiste nuevas credenciales vía saveCreds() sin perder referencia', async () => {
+  const { useMultiFileAuthState, initAuthCreds } = require('@whiskeysockets/baileys');
+  const tmpAuthDir = path.join(__dirname, '..', 'data', 'test_tmp_auth_baileys');
+  fs.mkdirSync(tmpAuthDir, { recursive: true });
+  try {
+    // 1. Simular sesión antigua expirada en disco
+    const oldCreds = initAuthCreds();
+    oldCreds.me = { id: '50500000000:1@s.whatsapp.net', name: 'OldDevice' };
+    fs.writeFileSync(path.join(tmpAuthDir, 'creds.json'), JSON.stringify(oldCreds));
+    fs.writeFileSync(path.join(tmpAuthDir, 'session-stale.0.json'), JSON.stringify({ stale: true }));
+
+    // 2. Cargar estado con useMultiFileAuthState y aplicar el flujo in-place de freshRegistration
+    const { state, saveCreds } = await useMultiFileAuthState(tmpAuthDir);
+    const freshCreds = initAuthCreds();
+    for (const k of Object.keys(state.creds)) {
+      delete state.creds[k];
+    }
+    Object.assign(state.creds, freshCreds);
+    assert.equal(state.creds.me, undefined, 'Antes de vincular, state.creds.me debe estar limpio');
+
+    // 3. Simular emparejamiento exitoso (QR o Código de 8 dígitos)
+    Object.assign(state.creds, {
+      me: { id: '50575534509:99@s.whatsapp.net', name: 'AlfaCredit S.A.' },
+      account: { details: 'test' },
+      registered: true
+    });
+    await saveCreds();
+
+    // 4. Verificar que creds.json en disco guardó la NUEVA sesión y no la antigua
+    const savedOnDisk = JSON.parse(fs.readFileSync(path.join(tmpAuthDir, 'creds.json'), 'utf8'));
+    assert.equal(savedOnDisk.me.id, '50575534509:99@s.whatsapp.net');
+    assert.equal(savedOnDisk.registered, true);
+  } finally {
+    try { fs.rmSync(tmpAuthDir, { recursive: true, force: true }); } catch {}
+  }
+});
+

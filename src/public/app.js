@@ -94,6 +94,7 @@ function handleSocketMessage(msg) {
     updateWhatsAppUI(data.whatsapp);
     updateStatsUI(data.stats);
     updateDateDropdowns(data.config?.dates || []);
+    updateTunnelBannerUI(data.config?.publicUrl);
   } else if (event === 'status_change') {
     updateWhatsAppUI(data);
   } else if (event === 'qr') {
@@ -121,7 +122,23 @@ function handleSocketMessage(msg) {
   } else if (event === 'tunnel_ready') {
     if (!state.config) state.config = {};
     state.config.publicUrl = data.publicUrl;
+    updateTunnelBannerUI(data.publicUrl);
     showToast(`🌐 Enlace público activo: ${data.publicUrl}/agendar`, 'success');
+  }
+}
+
+function updateTunnelBannerUI(publicUrl) {
+  const banner = document.getElementById('publicTunnelBanner');
+  const link = document.getElementById('publicTunnelLink');
+  if (!banner || !link) return;
+  if (publicUrl) {
+    const clean = publicUrl.replace(/\/$/, '');
+    const agendarUrl = `${clean}/agendar`;
+    link.href = agendarUrl;
+    link.textContent = agendarUrl;
+    banner.classList.remove('hidden');
+  } else {
+    banner.classList.add('hidden');
   }
 }
 
@@ -135,6 +152,7 @@ async function fetchInitialData() {
       updateWhatsAppUI(data.whatsapp);
       updateStatsUI(data.stats);
       updateDateDropdowns(data.config?.dates || []);
+      updateTunnelBannerUI(data.config?.publicUrl);
     }
   } catch (e) {
     console.error('Error cargando status inicial:', e);

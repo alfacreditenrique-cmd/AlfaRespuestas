@@ -149,6 +149,8 @@ class WhatsAppService {
       this.emitEvent('status_change', this.getStatus());
       return;
     }
+    this._startGen = (this._startGen || 0) + 1;
+    const myGen = this._startGen;
     try {
       if (this.sock) {
         const prevSock = this.sock;
@@ -161,11 +163,18 @@ class WhatsAppService {
       }
 
       const { state, saveCreds } = await useMultiFileAuthState(CONFIG.AUTH_DIR);
+      if (this._startGen !== myGen) return;
+
       const useFresh = Boolean(options.freshRegistration || this.needsFreshRegistration);
       if (useFresh && typeof initAuthCreds === 'function') {
-        state.creds = initAuthCreds();
+        // IMPORTANTE: Mutar state.creds in-place porque saveCreds() en Baileys captura la referencia original del objeto creds
+        const freshCreds = initAuthCreds();
+        for (const k of Object.keys(state.creds)) {
+          delete state.creds[k];
+        }
+        Object.assign(state.creds, freshCreds);
         this.needsFreshRegistration = false;
-      } else if (state.creds?.me && !state.creds?.account) {
+      } else if (state.creds?.me && !state.creds?.account && !state.creds?.registered) {
         // Credencial incompleta de un intento previo de pairingCode sin concluir
         delete state.creds.me;
       }
@@ -177,6 +186,7 @@ class WhatsAppService {
       } catch {
         version = [2, 3000, 1043857760];
       }
+      if (this._startGen !== myGen) return;
 
       this.status = 'CONNECTING';
       this.emitEvent('status_change', this.getStatus());
@@ -199,10 +209,25 @@ class WhatsAppService {
       });
       this.sock = sock;
 
-      // Guardar credenciales al actualizarse (solo si tienen identidad me para no corromper creds.json en disco)
-      sock.ev.on('creds.update', () => {
-        if (state.creds?.me?.id) {
-          saveCreds();
+      let cleanedStaleKeysForFresh = false;
+      // Guardar credenciales al actualizarse (solo cuando el emparejamiento fue aceptado o ya tiene cuenta activa)
+      sock.ev.on('creds.update', (update) => {
+        if (update && typeof update === 'object') {
+          Object.assign(state.creds, update);
+        }
+        if (state.creds?.me?.id && (state.creds?.account || state.creds?.registered)) {
+          if (useFresh && !cleanedStaleKeysForFresh) {
+            cleanedStaleKeysForFresh = true;
+            try {
+              const files = fs.readdirSync(CONFIG.AUTH_DIR);
+              for (const f of files) {
+                if (f !== 'creds.json' && f.endsWith('.json')) {
+                  try { fs.unlinkSync(path.join(CONFIG.AUTH_DIR, f)); } catch {}
+                }
+              }
+            } catch {}
+          }
+          this._lastSaveCredsPromise = Promise.resolve(saveCreds()).catch(() => {});
         }
       });
 
@@ -243,6 +268,9 @@ class WhatsAppService {
           if (statusCode === DisconnectReason.restartRequired || statusCode === 515) {
             this.reconnectAttempts = 0;
             this.needsFreshRegistration = false;
+            if (this._lastSaveCredsPromise) {
+              try { await this._lastSaveCredsPromise; } catch {}
+            }
             await this.start();
             return;
           }
