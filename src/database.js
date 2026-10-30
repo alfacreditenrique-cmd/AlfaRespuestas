@@ -880,7 +880,35 @@ const database = {
       }
     } catch {}
 
+    // Si estamos operando sobre la base principal alfa_citas.sqlite, sincronizar también seed-recovery.json
+    if (path.basename(CONFIG.DB_PATH) === 'alfa_citas.sqlite') {
+      try { this.saveToSeedRecovery(); } catch {}
+    }
+
     return targetFile;
+  },
+
+  saveToSeedRecovery(seedFilePath = null) {
+    try {
+      const seedPath = seedFilePath || path.join(__dirname, 'seed-recovery.json');
+      const appointments = db.prepare(`
+        SELECT candidate_name, phone_number, jid, position, date, time_slot, status, notes, notified_at, created_at, updated_at
+        FROM appointments
+        ORDER BY id ASC
+      `).all();
+      if (!appointments || appointments.length < 24) {
+        return { saved: false, count: appointments ? appointments.length : 0 };
+      }
+      const chat_states = db.prepare(`
+        SELECT phone_number, step, selected_position, selected_date, selected_time, candidate_name, jid
+        FROM chat_states
+        ORDER BY updated_at ASC
+      `).all();
+      fs.writeFileSync(seedPath, JSON.stringify({ appointments, chat_states }, null, 2), 'utf8');
+      return { saved: true, count: appointments.length };
+    } catch (e) {
+      return { saved: false, error: e.message };
+    }
   },
 
   getLatestBackup() {

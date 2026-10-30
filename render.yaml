@@ -3,16 +3,11 @@ services:
     name: alfa-respuestas
     env: docker
     dockerfilePath: Dockerfile
-    plan: starter
+    plan: free
     region: oregon
     envVars:
       - key: PORT
         value: 3000
       - key: NODE_ENV
         value: production
-      - key: DATA_DIR
-        value: /data
-    disk:
-      name: alfa-data
-      mountPath: /data
-      sizeGB: 1
+

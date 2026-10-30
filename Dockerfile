@@ -7,7 +7,6 @@ WORKDIR /app
 # Variables de entorno por defecto
 ENV NODE_ENV=production
 ENV PORT=3000
-ENV DATA_DIR=/data
 
 # Instalar dependencias primero para optimizar caché de capas Docker
 COPY package*.json ./
@@ -16,8 +15,8 @@ RUN npm ci --only=production
 # Copiar el código fuente de la aplicación
 COPY . .
 
-# Crear directorios para persistencia de base de datos, backups y sesión WhatsApp
-RUN mkdir -p /data/backups /data/auth_info_baileys
+# Asegurar directorios para persistencia de base de datos, backups y sesión WhatsApp
+RUN mkdir -p /app/data/backups /app/auth_info_baileys /data/backups /data/auth_info_baileys
 
 # Exponer el puerto
 EXPOSE 3000

@@ -273,9 +273,14 @@ class WhatsAppService {
             this.status = 'DISCONNECTED';
             this.pairingCode = null;
             this.needsFreshRegistration = true;
-            this.lastDisconnectReason = 'Sesión cerrada o desvinculada desde el teléfono. Haz clic en Reiniciar o vincula con Código de 8 dígitos cuando estés listo.';
+            this.lastDisconnectReason = 'Sesión previa cerrada. Escanea el código QR o vincula con Código de 8 dígitos.';
             console.log('ℹ️ [WhatsApp]', this.lastDisconnectReason);
             this.emitEvent('status_change', this.getStatus());
+            if (!useFresh) {
+              setTimeout(() => {
+                if (!this.paused) this.start({ freshRegistration: true });
+              }, 800).unref();
+            }
             return;
           }
 

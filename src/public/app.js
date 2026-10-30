@@ -118,6 +118,10 @@ function handleSocketMessage(msg) {
     if (state.config) state.config.dates = data;
     updateDateDropdowns(data);
     renderDatesTable(data);
+  } else if (event === 'tunnel_ready') {
+    if (!state.config) state.config = {};
+    state.config.publicUrl = data.publicUrl;
+    showToast(`🌐 Enlace público activo: ${data.publicUrl}/agendar`, 'success');
   }
 }
 
@@ -581,7 +585,10 @@ function setupEventListeners() {
   const btnCopyPublic = document.getElementById('btnCopyPublicLink');
   if (btnCopyPublic) {
     btnCopyPublic.addEventListener('click', () => {
-      const publicUrl = `${window.location.origin}/agendar`;
+      const baseOrigin = (state.config && state.config.publicUrl)
+        ? state.config.publicUrl.replace(/\/$/, '')
+        : window.location.origin;
+      const publicUrl = `${baseOrigin}/agendar`;
       navigator.clipboard.writeText(publicUrl).then(() => {
         showToast(`🔗 Link copiado: ${publicUrl} (Compártelo a candidatos sin riesgo de bloqueo)`, 'success');
       }).catch(() => {

@@ -465,4 +465,25 @@ test('API Escudo Anti-Ban: POST /api/whatsapp/pause y POST /api/whatsapp/pairing
   }
 });
 
+test('API Túnel Público: GET /api/tunnel y config.publicUrl exponen URL pública y enlace /agendar', async () => {
+  const prevPub = process.env.PUBLIC_URL;
+  process.env.PUBLIC_URL = 'https://alfa-test.lhr.life';
+  try {
+    const res = await fetch(`${baseUrl}/api/tunnel`);
+    assert.equal(res.status, 200);
+    const data = await res.json();
+    assert.equal(data.success, true);
+    assert.equal(data.publicUrl, 'https://alfa-test.lhr.life');
+    assert.equal(data.agendarUrl, 'https://alfa-test.lhr.life/agendar');
+
+    const statusRes = await fetch(`${baseUrl}/api/status`);
+    const statusData = await statusRes.json();
+    assert.equal(statusData.config.publicUrl, 'https://alfa-test.lhr.life');
+  } finally {
+    if (prevPub === undefined) delete process.env.PUBLIC_URL;
+    else process.env.PUBLIC_URL = prevPub;
+  }
+});
+
+
 

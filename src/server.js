@@ -40,6 +40,13 @@ whatsappService.onEvent((type, data) => {
   }
 });
 
+let activePublicUrl = process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || null;
+let tunnelProcess = null;
+
+function getPublicUrl() {
+  return activePublicUrl || process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || null;
+}
+
 // WebSocket conexión inicial
 wss.on('connection', (ws) => {
   // Enviar estado actual de WhatsApp y estadísticas inmediatamente
@@ -53,7 +60,8 @@ wss.on('connection', (ws) => {
         positions: CONFIG.POSITIONS,
         timeSlots: CONFIG.TIME_SLOTS,
         threshold: CONFIG.LOW_SLOTS_ALERT_THRESHOLD,
-        companyName: CONFIG.COMPANY_NAME
+        companyName: CONFIG.COMPANY_NAME,
+        publicUrl: getPublicUrl()
       }
     }
   }));
@@ -74,8 +82,19 @@ app.get('/api/status', (req, res) => {
       positions: CONFIG.POSITIONS,
       timeSlots: CONFIG.TIME_SLOTS,
       threshold: CONFIG.LOW_SLOTS_ALERT_THRESHOLD,
-      companyName: CONFIG.COMPANY_NAME
+      companyName: CONFIG.COMPANY_NAME,
+      publicUrl: getPublicUrl()
     }
+  });
+});
+
+// 1b. Consultar URL pública del túnel activo
+app.get('/api/tunnel', (req, res) => {
+  const pub = getPublicUrl();
+  res.json({
+    success: true,
+    publicUrl: pub,
+    agendarUrl: pub ? `${pub.replace(/\/$/, '')}/agendar` : null
   });
 });
 
@@ -742,6 +761,68 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Túnel HTTPS público automático (localhost.run vía OpenSSH nativo) cuando corre en PC local
+function startPublicTunnel(port) {
+  if (process.env.RENDER || process.env.RAILWAY_ENVIRONMENT || process.env.DISABLE_TUNNEL === 'true') {
+    return;
+  }
+  try {
+    const { spawn } = require('child_process');
+    const fs = require('fs');
+    if (tunnelProcess) {
+      try { tunnelProcess.kill(); } catch {}
+      tunnelProcess = null;
+    }
+
+    const sshArgs = [
+      '-T',
+      '-o', 'StrictHostKeyChecking=no',
+      '-o', 'ServerAliveInterval=30',
+      '-o', 'ConnectTimeout=15',
+      '-R', `80:localhost:${port}`,
+      'nokey@localhost.run'
+    ];
+
+    const proc = spawn('ssh', sshArgs, { stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
+    tunnelProcess = proc;
+
+    const handleOutput = (chunk) => {
+      const text = chunk.toString();
+      const match = text.match(/https:\/\/[a-z0-9-]+\.lhr\.life/i);
+      if (match && match[0] !== activePublicUrl) {
+        activePublicUrl = match[0];
+        console.log(`🌐 URL PÚBLICA EN VIVO (Panel): ${activePublicUrl}`);
+        console.log(`🔗 LINK AUTO-AGENDAR CANDIDATOS: ${activePublicUrl}/agendar`);
+        try {
+          fs.writeFileSync(path.join(CONFIG.DATA_DIR, 'public_url.txt'), `${activePublicUrl}\n${activePublicUrl}/agendar\n`, 'utf8');
+        } catch {}
+        broadcast('tunnel_ready', {
+          publicUrl: activePublicUrl,
+          agendarUrl: `${activePublicUrl}/agendar`
+        });
+      }
+    };
+
+    proc.stdout.on('data', handleOutput);
+    proc.stderr.on('data', handleOutput);
+
+    proc.on('close', () => {
+      if (tunnelProcess === proc) {
+        tunnelProcess = null;
+        setTimeout(() => startPublicTunnel(port), 5000).unref();
+      }
+    });
+
+    proc.on('error', () => {
+      if (tunnelProcess === proc) {
+        tunnelProcess = null;
+      }
+    });
+  } catch (e) {
+    console.warn('⚠️ No se pudo iniciar túnel público automático:', e.message);
+  }
+}
+
 // Iniciar servidor
 function startServer() {
   server.on('error', (err) => {
@@ -763,11 +844,17 @@ function startServer() {
     // Iniciar cliente de WhatsApp
     whatsappService.start();
 
-    // Auto-ping cada 10 minutos para evitar hibernación en Render gratuito
-    if (process.env.NODE_ENV === 'production') {
-      const keepAliveUrl = `${process.env.RENDER_EXTERNAL_URL || 'https://alfarespuestas.onrender.com'}/api/status`;
+    // Iniciar túnel público HTTPS gratuito si se ejecuta localmente
+    startPublicTunnel(CONFIG.PORT);
+
+    // Auto-ping inteligente en producción (solo en horario activo 06:00-22:00 CST para no agotar las 750h gratuitas de Render)
+    if (process.env.NODE_ENV === 'production' && process.env.RENDER_EXTERNAL_URL) {
+      const keepAliveUrl = `${process.env.RENDER_EXTERNAL_URL}/api/status`;
       setInterval(() => {
-        fetch(keepAliveUrl).catch(() => {});
+        const hourCst = (new Date().getUTCHours() - 6 + 24) % 24;
+        if (hourCst >= 6 && hourCst <= 22) {
+          fetch(keepAliveUrl).catch(() => {});
+        }
       }, 10 * 60 * 1000).unref();
     }
   });
@@ -777,4 +864,4 @@ if (require.main === module) {
   startServer();
 }
 
-module.exports = { app, server, startServer };
+module.exports = { app, server, startServer, getPublicUrl };
