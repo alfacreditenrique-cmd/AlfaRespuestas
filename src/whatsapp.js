@@ -1,13 +1,20 @@
-const {
-  default: makeWASocket,
-  useMultiFileAuthState,
-  initAuthCreds,
-  DisconnectReason,
-  fetchLatestBaileysVersion,
-  jidNormalizedUser,
-  isLidUser,
-  Browsers
-} = require('@whiskeysockets/baileys');
+let makeWASocket, useMultiFileAuthState, initAuthCreds, DisconnectReason, fetchLatestBaileysVersion, jidNormalizedUser, isLidUser, Browsers;
+try {
+  const baileys = require('@whiskeysockets/baileys');
+  makeWASocket = baileys.default;
+  useMultiFileAuthState = baileys.useMultiFileAuthState;
+  initAuthCreds = baileys.initAuthCreds;
+  DisconnectReason = baileys.DisconnectReason || {};
+  fetchLatestBaileysVersion = baileys.fetchLatestBaileysVersion;
+  jidNormalizedUser = baileys.jidNormalizedUser || ((jid) => jid);
+  isLidUser = baileys.isLidUser || ((jid) => String(jid || '').endsWith('@lid'));
+  Browsers = baileys.Browsers;
+} catch (e) {
+  console.warn('⚠️ @whiskeysockets/baileys no se pudo cargar (modo serverless seguro):', e.message);
+  jidNormalizedUser = (jid) => jid;
+  isLidUser = (jid) => String(jid || '').endsWith('@lid');
+  DisconnectReason = { connectionLost: 408, loggedOut: 401 };
+}
 const pino = require('pino');
 const QRCode = require('qrcode');
 const fs = require('fs');

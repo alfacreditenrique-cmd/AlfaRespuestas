@@ -28,7 +28,11 @@ function handler(req, res) {
   return appInstance(req, res);
 }
 
-// Compatibilidad con Express y tests
+if (appInstance) {
+  Object.setPrototypeOf(handler, appInstance);
+  Object.assign(handler, appInstance);
+}
+
 handler.listen = function (...args) {
   if (!appInstance) {
     throw initError || new Error('App instance not initialized');
