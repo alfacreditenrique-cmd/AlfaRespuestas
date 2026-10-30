@@ -763,7 +763,7 @@ app.get('*', (req, res) => {
 
 // Túnel HTTPS público automático (localhost.run vía OpenSSH nativo) cuando corre en PC local
 function startPublicTunnel(port) {
-  if (process.env.RENDER || process.env.RAILWAY_ENVIRONMENT || process.env.DISABLE_TUNNEL === 'true') {
+  if (process.env.RENDER || process.env.RAILWAY_ENVIRONMENT || process.env.VERCEL || process.env.DISABLE_TUNNEL === 'true') {
     return;
   }
   try {

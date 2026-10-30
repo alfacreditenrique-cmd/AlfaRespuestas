@@ -9,6 +9,9 @@
     "test": "node --test --test-concurrency=1 tests/**/*.test.js",
     "build:installer": "node scripts/build-installer.js"
   },
+  "engines": {
+    "node": ">=22.5.0"
+  },
   "dependencies": {
     "@whiskeysockets/baileys": "^6.7.13",
     "cors": "^2.8.5",

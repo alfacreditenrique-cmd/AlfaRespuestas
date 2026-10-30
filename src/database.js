@@ -9,6 +9,18 @@ if (!fs.existsSync(dbDir)) {
   fs.mkdirSync(dbDir, { recursive: true });
 }
 
+// En entornos serverless como Vercel donde sólo /tmp es escribible, si la DB no existe en /tmp la copiamos del bundle si está disponible
+if (process.env.VERCEL && !fs.existsSync(CONFIG.DB_PATH)) {
+  const bundledDb = path.join(__dirname, '..', 'data', 'alfa_citas.sqlite');
+  if (fs.existsSync(bundledDb)) {
+    try {
+      fs.copyFileSync(bundledDb, CONFIG.DB_PATH);
+    } catch (e) {
+      console.warn('⚠️ No se pudo copiar alfa_citas.sqlite empaquetada a /tmp:', e.message);
+    }
+  }
+}
+
 const db = new DatabaseSync(CONFIG.DB_PATH);
 
 // Configuración de performance y consistencia (WAL mode)
@@ -99,7 +111,8 @@ const KNOWN_LID_PHONE_MAPPINGS = {
   '123656420245589': '50588272121',  // Julio Cesar Hernandez Perez
   '92457844879515': '50582066598',   // Junior jose chavarria matus
   '212803298263138': '50586069625',  // Eden Jacinto Lopez Ortega.
-  '237602456256678': '50557196182'   // Steven Jesus Zelaya
+  '237602456256678': '50557196182',  // Steven Jesus Zelaya
+  '272632142377156': '50588776655'   // Pedro Alvarado
 };
 
 // Inicializar directorio de backups

@@ -1,6 +1,7 @@
 const path = require('path');
 
-const dataDir = process.env.DATA_DIR || path.join(__dirname, '..', 'data');
+const isVercel = Boolean(process.env.VERCEL);
+const dataDir = process.env.DATA_DIR || (isVercel ? '/tmp' : path.join(__dirname, '..', 'data'));
 
 const CONFIG = {
   PORT: process.env.PORT || 3000,
@@ -8,7 +9,7 @@ const CONFIG = {
   LOCATION: 'COSTADO SUROESTE PARQUE CENTRAL 1/2 CUADRA AL OESTE, SEBACO',
   DATA_DIR: dataDir,
   DB_PATH: process.env.DB_PATH || path.join(dataDir, 'alfa_citas.sqlite'),
-  AUTH_DIR: process.env.AUTH_DIR || (process.env.DATA_DIR ? path.join(dataDir, 'auth_info_baileys') : path.join(__dirname, '..', 'auth_info_baileys')),
+  AUTH_DIR: process.env.AUTH_DIR || (isVercel || process.env.DATA_DIR ? path.join(dataDir, 'auth_info_baileys') : path.join(__dirname, '..', 'auth_info_baileys')),
   BACKUP_DIR: process.env.BACKUP_DIR || path.join(dataDir, 'backups'),
 
   // Número de WhatsApp del Administrador para recibir respaldo automático de cada cita
