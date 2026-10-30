@@ -7,3 +7,4 @@ process.env.DISABLE_TUNNEL = 'true';
 const { app } = require('../src/server');
 
 module.exports = app;
+module.exports.default = app;

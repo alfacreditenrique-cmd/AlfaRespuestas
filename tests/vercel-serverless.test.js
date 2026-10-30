@@ -49,3 +49,49 @@ test('Vercel Config: package.json define engines.node como 22.x compatible con V
   const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
   assert.equal(pkg.engines?.node, '22.x', 'engines.node debe ser 22.x para selección nativa en Vercel');
 });
+
+test('Vercel Serverless: Ejecución HTTP real de endpoints en modo Serverless con Fallback Database', async () => {
+  const http = require('http');
+  const apiHandler = require('../api/index');
+  assert.equal(typeof apiHandler.default, 'function', 'api/index debe proveer compatibilidad ESM (.default)');
+
+  const testServer = http.createServer(apiHandler);
+  await new Promise(resolve => testServer.listen(0, resolve));
+  const port = testServer.address().port;
+  const baseUrl = `http://127.0.0.1:${port}`;
+
+  try {
+    // 1. GET /
+    const resHome = await fetch(`${baseUrl}/`);
+    assert.equal(resHome.status, 200);
+    assert.ok(resHome.headers.get('content-type')?.includes('text/html'));
+
+    // 2. GET /agendar
+    const resAgendar = await fetch(`${baseUrl}/agendar`);
+    assert.equal(resAgendar.status, 200);
+    const htmlAgendar = await resAgendar.text();
+    assert.ok(htmlAgendar.includes('Agendar Entrevista'));
+
+    // 3. GET /api/status
+    const resStatus = await fetch(`${baseUrl}/api/status`);
+    assert.equal(resStatus.status, 200);
+    const jsonStatus = await resStatus.json();
+    assert.equal(jsonStatus.success, true);
+    assert.ok(jsonStatus.config?.dates?.length >= 2);
+
+    // 4. GET /api/slots?date=2025-11-04
+    const resSlots = await fetch(`${baseUrl}/api/slots?date=2025-11-04`);
+    assert.equal(resSlots.status, 200);
+    const jsonSlots = await resSlots.json();
+    assert.equal(jsonSlots.success, true);
+    assert.ok(Array.isArray(jsonSlots.available));
+
+    // 5. GET /app.js
+    const resStatic = await fetch(`${baseUrl}/app.js`);
+    assert.equal(resStatic.status, 200);
+    assert.ok(resStatic.headers.get('content-type')?.includes('javascript'));
+  } finally {
+    await new Promise(resolve => testServer.close(resolve));
+  }
+});
+

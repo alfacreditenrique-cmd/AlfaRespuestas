@@ -2,7 +2,12 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
-const { DatabaseSync } = require('node:sqlite');
+let DatabaseSync;
+try {
+  DatabaseSync = require('node:sqlite').DatabaseSync;
+} catch {
+  DatabaseSync = require('../src/database-fallback').FallbackDatabaseSync;
+}
 
 const database = require('../src/database');
 const CONFIG = require('../src/config');

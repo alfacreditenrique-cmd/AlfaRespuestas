@@ -7,7 +7,11 @@ try {
   if (process.env.TEST_FALLBACK_DB === '1') {
     throw new Error('Forced fallback for testing');
   }
-  DatabaseSync = require('node:sqlite').DatabaseSync;
+  const sqlite = require('node:sqlite');
+  if (!sqlite || typeof sqlite.DatabaseSync !== 'function') {
+    throw new Error('DatabaseSync is not available in node:sqlite');
+  }
+  DatabaseSync = sqlite.DatabaseSync;
 } catch (err) {
   const { FallbackDatabaseSync } = require('./database-fallback');
   DatabaseSync = FallbackDatabaseSync;
@@ -40,7 +44,15 @@ if (process.env.VERCEL && !fs.existsSync(CONFIG.DB_PATH)) {
   }
 }
 
-const db = new DatabaseSync(CONFIG.DB_PATH);
+let db;
+try {
+  db = new DatabaseSync(CONFIG.DB_PATH);
+} catch (err) {
+  console.warn('⚠️ Error instanciando DatabaseSync, utilizando FallbackDatabaseSync:', err.message);
+  const { FallbackDatabaseSync } = require('./database-fallback');
+  DatabaseSync = FallbackDatabaseSync;
+  db = new DatabaseSync(CONFIG.DB_PATH);
+}
 
 // Configuración de performance y consistencia (WAL mode)
 db.exec(`
