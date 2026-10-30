@@ -1,22 +1,41 @@
-const { DatabaseSync } = require('node:sqlite');
 const fs = require('fs');
 const path = require('path');
 const CONFIG = require('./config');
 
+let DatabaseSync;
+try {
+  if (process.env.TEST_FALLBACK_DB === '1') {
+    throw new Error('Forced fallback for testing');
+  }
+  DatabaseSync = require('node:sqlite').DatabaseSync;
+} catch (err) {
+  const { FallbackDatabaseSync } = require('./database-fallback');
+  DatabaseSync = FallbackDatabaseSync;
+}
+
 // Asegurar que el directorio de datos exista
 const dbDir = path.dirname(CONFIG.DB_PATH);
 if (!fs.existsSync(dbDir)) {
-  fs.mkdirSync(dbDir, { recursive: true });
+  try {
+    fs.mkdirSync(dbDir, { recursive: true });
+  } catch {}
 }
 
 // En entornos serverless como Vercel donde sólo /tmp es escribible, si la DB no existe en /tmp la copiamos del bundle si está disponible
 if (process.env.VERCEL && !fs.existsSync(CONFIG.DB_PATH)) {
-  const bundledDb = path.join(__dirname, '..', 'data', 'alfa_citas.sqlite');
-  if (fs.existsSync(bundledDb)) {
-    try {
-      fs.copyFileSync(bundledDb, CONFIG.DB_PATH);
-    } catch (e) {
-      console.warn('⚠️ No se pudo copiar alfa_citas.sqlite empaquetada a /tmp:', e.message);
+  const bundledDbCandidates = [
+    path.join(__dirname, '..', 'data', 'alfa_citas.sqlite'),
+    path.join(process.cwd(), 'data', 'alfa_citas.sqlite'),
+    path.join(process.cwd(), 'src', '..', 'data', 'alfa_citas.sqlite')
+  ];
+  for (const bundledDb of bundledDbCandidates) {
+    if (fs.existsSync(bundledDb)) {
+      try {
+        fs.copyFileSync(bundledDb, CONFIG.DB_PATH);
+        break;
+      } catch (e) {
+        console.warn('⚠️ No se pudo copiar alfa_citas.sqlite empaquetada a /tmp:', e.message);
+      }
     }
   }
 }
@@ -878,7 +897,14 @@ const database = {
     }
 
     const sqlPath = targetFile.replace(/\\/g, '/').replace(/'/g, "''");
-    db.exec(`VACUUM INTO '${sqlPath}'`);
+    try {
+      db.exec(`VACUUM INTO '${sqlPath}'`);
+    } catch (e) {
+      // Si la base no soporta VACUUM INTO (ej. modo fallback o FS restringido), crear archivo de respaldo simulado
+      try {
+        fs.writeFileSync(targetFile, JSON.stringify(this.listAppointments(), null, 2), 'utf8');
+      } catch {}
+    }
 
     // Rotación: mantener un máximo de 30 copias de seguridad
     try {

@@ -10,16 +10,33 @@ const database = require('./database');
 const scheduler = require('./scheduler');
 const whatsappService = require('./whatsapp');
 
+const fs = require('fs');
+
+const isServerless = Boolean(process.env.VERCEL || process.env.SERVERLESS);
 const app = express();
-const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+const server = isServerless ? null : http.createServer(app);
+const wss = isServerless ? null : new WebSocket.Server({ server });
+
+function getPublicDir() {
+  const candidates = [
+    path.join(__dirname, 'public'),
+    path.join(process.cwd(), 'src', 'public'),
+    path.join(process.cwd(), 'public')
+  ];
+  for (const c of candidates) {
+    if (fs.existsSync(c)) return c;
+  }
+  return path.join(__dirname, 'public');
+}
+const publicDir = getPublicDir();
 
 app.use(cors());
 app.use(express.json({ limit: '15mb' }));
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(publicDir));
 
 // Difusión por WebSocket a clientes del panel
 function broadcast(eventType, data) {
+  if (!wss) return;
   const payload = JSON.stringify({ event: eventType, data, timestamp: new Date().toISOString() });
   wss.clients.forEach(client => {
     if (client.readyState === WebSocket.OPEN) {
@@ -32,13 +49,15 @@ function broadcast(eventType, data) {
   });
 }
 
-// Suscribir eventos de WhatsApp para reenviar al panel
-whatsappService.onEvent((type, data) => {
-  broadcast(type, data);
-  if (type === 'new_appointment') {
-    broadcast('stats_updated', database.getStats());
-  }
-});
+// Suscribir eventos de WhatsApp para reenviar al panel si WebSocket está disponible
+if (wss) {
+  whatsappService.onEvent((type, data) => {
+    broadcast(type, data);
+    if (type === 'new_appointment') {
+      broadcast('stats_updated', database.getStats());
+    }
+  });
+}
 
 let activePublicUrl = process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || null;
 let tunnelProcess = null;
@@ -47,25 +66,27 @@ function getPublicUrl() {
   return activePublicUrl || process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || null;
 }
 
-// WebSocket conexión inicial
-wss.on('connection', (ws) => {
-  // Enviar estado actual de WhatsApp y estadísticas inmediatamente
-  ws.send(JSON.stringify({
-    event: 'init_state',
-    data: {
-      whatsapp: whatsappService.getStatus(),
-      stats: database.getStats(),
-      config: {
-        dates: database.listDates(),
-        positions: CONFIG.POSITIONS,
-        timeSlots: CONFIG.TIME_SLOTS,
-        threshold: CONFIG.LOW_SLOTS_ALERT_THRESHOLD,
-        companyName: CONFIG.COMPANY_NAME,
-        publicUrl: getPublicUrl()
+// WebSocket conexión inicial (solo en modo servidor no-serverless)
+if (wss) {
+  wss.on('connection', (ws) => {
+    // Enviar estado actual de WhatsApp y estadísticas inmediatamente
+    ws.send(JSON.stringify({
+      event: 'init_state',
+      data: {
+        whatsapp: whatsappService.getStatus(),
+        stats: database.getStats(),
+        config: {
+          dates: database.listDates(),
+          positions: CONFIG.POSITIONS,
+          timeSlots: CONFIG.TIME_SLOTS,
+          threshold: CONFIG.LOW_SLOTS_ALERT_THRESHOLD,
+          companyName: CONFIG.COMPANY_NAME,
+          publicUrl: getPublicUrl()
+        }
       }
-    }
-  }));
-});
+    }));
+  });
+}
 
 // ==========================================
 // RUTAS DE LA API REST
@@ -753,12 +774,30 @@ app.get('/api/export/excel', async (req, res) => {
 
 // Portal público de auto-agendamiento de entrevistas (Plan B sin riesgo de bloqueo de WhatsApp)
 app.get('/agendar', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'agendar.html'));
+  const file = path.join(publicDir, 'agendar.html');
+  if (fs.existsSync(file)) {
+    return res.sendFile(file);
+  }
+  res.status(404).send('Portal de agendamiento no encontrado');
 });
 
-// Fallback al index.html para la SPA
+// Fallback al index.html para la SPA (ignorando rutas /api/ no coincidentes)
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  if (req.path.startsWith('/api/')) {
+    return res.status(404).json({ success: false, error: 'Ruta API no encontrada' });
+  }
+  const file = path.join(publicDir, 'index.html');
+  if (fs.existsSync(file)) {
+    return res.sendFile(file);
+  }
+  res.status(404).send('Panel no encontrado');
+});
+
+// Manejador global de errores para evitar caídas en serverless
+app.use((err, req, res, next) => {
+  console.error('Error no controlado en la aplicación:', err);
+  if (res.headersSent) return next(err);
+  res.status(500).json({ success: false, error: err.message || 'Error interno del servidor' });
 });
 
 // Túnel HTTPS público automático (localhost.run vía OpenSSH nativo) cuando corre en PC local
@@ -825,7 +864,9 @@ function startPublicTunnel(port) {
 
 // Iniciar servidor
 function startServer() {
-  server.on('error', (err) => {
+  const activeServer = server || http.createServer(app);
+
+  activeServer.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
       console.error(`❌ Error fatal: El puerto ${CONFIG.PORT} ya está en uso por otra instancia o proceso.`);
       console.error(`Por favor cierre la otra instancia de AlfaRespuestas antes de continuar.`);
@@ -835,7 +876,7 @@ function startServer() {
     process.exit(1);
   });
 
-  server.listen(CONFIG.PORT, () => {
+  activeServer.listen(CONFIG.PORT, () => {
     console.log(`=======================================================`);
     console.log(`🚀 Sistema AlfaRespuestas listo en: http://localhost:${CONFIG.PORT}`);
     console.log(`🏢 Empresa: ${CONFIG.COMPANY_NAME}`);
