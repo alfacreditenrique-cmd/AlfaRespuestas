@@ -55,7 +55,7 @@ test('Despliegue Vercel: api/index.js y vercel.json configurados correctamente p
   assert.ok(Array.isArray(vercelJson.rewrites), 'vercel.json debe definir rewrites');
   const mainRewrite = vercelJson.rewrites.find(r => r.source === '/(.*)');
   assert.ok(mainRewrite, 'Debe existir un rewrite para /(.*)');
-  assert.equal(mainRewrite.destination, '/api/index.js');
+  assert.ok(mainRewrite.destination === '/api' || mainRewrite.destination === '/api/index.js', 'El rewrite debe apuntar a /api o /api/index.js');
 
   // 3. package.json tiene engines >= 22.5.0 para node:sqlite
   const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));

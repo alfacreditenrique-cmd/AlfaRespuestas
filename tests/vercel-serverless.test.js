@@ -34,14 +34,14 @@ test('Vercel Serverless: Base de datos FallbackDatabaseSync emula completamente 
   assert.ok(stats.confirmed >= 41);
 });
 
-test('Vercel Config: vercel.json tiene includeFiles como array válido para bundle serverless', () => {
+test('Vercel Config: vercel.json tiene rewrites apuntando al endpoint serverless /api', () => {
   const vercelPath = path.join(__dirname, '..', 'vercel.json');
   const vercelConfig = JSON.parse(fs.readFileSync(vercelPath, 'utf8'));
 
-  assert.ok(vercelConfig.functions && vercelConfig.functions['api/index.js'], 'Debe configurar api/index.js');
-  assert.ok(Array.isArray(vercelConfig.functions['api/index.js'].includeFiles), 'includeFiles debe ser un array para no romper patrones glob');
-  assert.ok(vercelConfig.functions['api/index.js'].includeFiles.includes('src/**'));
-  assert.ok(vercelConfig.functions['api/index.js'].includeFiles.includes('data/alfa_citas.sqlite'));
+  assert.ok(Array.isArray(vercelConfig.rewrites), 'Debe tener configuración de rewrites');
+  const catchAll = vercelConfig.rewrites.find(r => r.source === '/(.*)');
+  assert.ok(catchAll, 'Debe tener regla catch-all /(.*)');
+  assert.equal(catchAll.destination, '/api', 'La regla debe apuntar a /api para invocación de api/index.js');
 });
 
 test('Vercel Config: package.json define engines.node como 22.x compatible con Vercel', () => {

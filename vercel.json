@@ -1,21 +1,9 @@
 {
   "version": 2,
-  "functions": {
-    "api/index.js": {
-      "includeFiles": [
-        "src/**",
-        "data/alfa_citas.sqlite"
-      ]
-    }
-  },
   "rewrites": [
     {
-      "source": "/api/ping",
-      "destination": "/api/ping.js"
-    },
-    {
       "source": "/(.*)",
-      "destination": "/api/index.js"
+      "destination": "/api"
     }
   ]
 }
