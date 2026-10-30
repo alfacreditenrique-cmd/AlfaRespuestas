@@ -34,12 +34,11 @@ test('Vercel Serverless: Base de datos FallbackDatabaseSync emula completamente 
   assert.ok(stats.confirmed >= 41);
 });
 
-test('Vercel Config: vercel.json tiene runtime nodejs22.x y includeFiles como array válido', () => {
+test('Vercel Config: vercel.json tiene includeFiles como array válido para bundle serverless', () => {
   const vercelPath = path.join(__dirname, '..', 'vercel.json');
   const vercelConfig = JSON.parse(fs.readFileSync(vercelPath, 'utf8'));
 
   assert.ok(vercelConfig.functions && vercelConfig.functions['api/index.js'], 'Debe configurar api/index.js');
-  assert.equal(vercelConfig.functions['api/index.js'].runtime, 'nodejs22.x', 'Debe especificar runtime nodejs22.x');
   assert.ok(Array.isArray(vercelConfig.functions['api/index.js'].includeFiles), 'includeFiles debe ser un array para no romper patrones glob');
   assert.ok(vercelConfig.functions['api/index.js'].includeFiles.includes('src/**'));
   assert.ok(vercelConfig.functions['api/index.js'].includeFiles.includes('data/alfa_citas.sqlite'));

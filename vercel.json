@@ -2,7 +2,6 @@
   "version": 2,
   "functions": {
     "api/index.js": {
-      "runtime": "nodejs22.x",
       "includeFiles": [
         "src/**",
         "data/alfa_citas.sqlite"
@@ -16,3 +15,4 @@
     }
   ]
 }
+
