@@ -772,6 +772,15 @@ app.get('/api/export/excel', async (req, res) => {
   }
 });
 
+// Panel de administración de citas
+app.get('/', (req, res) => {
+  const file = path.join(publicDir, 'index.html');
+  if (fs.existsSync(file)) {
+    return res.sendFile(file);
+  }
+  res.status(404).send('Panel no encontrado');
+});
+
 // Portal público de auto-agendamiento de entrevistas (Plan B sin riesgo de bloqueo de WhatsApp)
 app.get('/agendar', (req, res) => {
   const file = path.join(publicDir, 'agendar.html');

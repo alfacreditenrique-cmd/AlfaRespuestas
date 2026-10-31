@@ -2,6 +2,14 @@
   "version": 2,
   "rewrites": [
     {
+      "source": "/agendar",
+      "destination": "/agendar.html"
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": "/api"
+    },
+    {
       "source": "/(.*)",
       "destination": "/api"
     }
