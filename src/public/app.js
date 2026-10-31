@@ -641,6 +641,10 @@ function setupEventListeners() {
   const btnPairing = document.getElementById('btnGetPairingCode');
   if (btnPairing) {
     btnPairing.addEventListener('click', async () => {
+      if (window.location.hostname.includes('vercel.app')) {
+        showToast('ℹ️ El bot de WhatsApp opera de forma continua en tu PC local (http://localhost:3000). Tu sesión de WhatsApp ya está conectada allí.', 'info');
+        return;
+      }
       const phoneInput = document.getElementById('inputPairingPhone');
       const phone = phoneInput ? phoneInput.value.trim() : '';
       if (!phone) {
