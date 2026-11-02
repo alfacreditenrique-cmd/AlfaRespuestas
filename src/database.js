@@ -1066,6 +1066,7 @@ const database = {
     db.prepare(`
       UPDATE appointments 
       SET confirmation_status = 'failed',
+          confirmation_sent_at = NULL,
           confirmation_error = ?,
           updated_at = ?
       WHERE id = ?
@@ -1088,9 +1089,9 @@ const database = {
       const row = db.prepare(`
         SELECT 
           COUNT(*) as total,
-          SUM(CASE WHEN confirmation_sent_at IS NOT NULL OR confirmation_status = 'sent' THEN 1 ELSE 0 END) as sent,
-          SUM(CASE WHEN (confirmation_sent_at IS NULL AND confirmation_status != 'sent' AND confirmation_status != 'failed') OR confirmation_status = 'pending' THEN 1 ELSE 0 END) as pending,
-          SUM(CASE WHEN confirmation_status = 'failed' THEN 1 ELSE 0 END) as failed
+          SUM(CASE WHEN confirmation_status != 'failed' AND (confirmation_sent_at IS NOT NULL OR confirmation_status = 'sent') THEN 1 ELSE 0 END) as sent,
+          SUM(CASE WHEN confirmation_status = 'failed' THEN 1 ELSE 0 END) as failed,
+          SUM(CASE WHEN (confirmation_status = 'pending' OR (confirmation_status != 'failed' AND confirmation_status != 'sent' AND confirmation_sent_at IS NULL)) THEN 1 ELSE 0 END) as pending
         FROM appointments
         WHERE status IN ('confirmada', 'reprogramada')
       `).get();

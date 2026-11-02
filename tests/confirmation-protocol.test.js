@@ -155,6 +155,44 @@ test('API Endpoints Protocolo Confirmación: HTTP GET /api/confirmation-protocol
   }
 });
 
+test('UI Frontend: Archivos JavaScript del panel tienen sintaxis válida sin errores de compilación', () => {
+  const { execSync } = require('child_process');
+  const files = [
+    path.join(__dirname, '..', 'public', 'app.js'),
+    path.join(__dirname, '..', 'src', 'public', 'app.js')
+  ];
+
+  for (const f of files) {
+    assert.doesNotThrow(() => {
+      execSync(`node -c "${f}"`, { stdio: 'pipe' });
+    }, `El archivo ${f} debe compilar sin errores de sintaxis en Node.js`);
+  }
+});
+
+test('Protocolo Confirmación: startProtocol rechaza inicio en modo real si WhatsApp no está conectado', async () => {
+  // Asegurarse de que en modo real sin conexión no inicie un bucle destructivo
+  const res = await confirmationProtocol.startProtocol({ dryRun: false });
+  assert.equal(res.success, false);
+  assert.ok(res.message.includes('WhatsApp no está conectado'));
+});
+
+test('Protocolo Confirmación: Filtro failed y unconfirmed retornan candidatos correctos', () => {
+  const candidates = database.listCandidatesForConfirmation();
+  const testCandidate = candidates[0];
+
+  // Marcar como failed
+  database.markConfirmationFailed(testCandidate.id, 'Simulated network timeout');
+
+  const failedList = confirmationProtocol.getCandidates('failed');
+  assert.ok(failedList.some(c => c.id === testCandidate.id), 'Candidato fallido debe aparecer en filtro failed');
+
+  const unconfirmedList = confirmationProtocol.getCandidates('unconfirmed');
+  assert.ok(unconfirmedList.some(c => c.id === testCandidate.id), 'Candidato fallido debe ser reintentable en unconfirmed');
+
+  // Restaurar candidato
+  database.db.exec(`UPDATE appointments SET confirmation_status = 'pending', confirmation_error = NULL WHERE id = ${testCandidate.id}`);
+});
+
 test('UI Frontend: Botón y modal del Protocolo de Confirmación presentes en public/index.html', () => {
   const html = fs.readFileSync(path.join(__dirname, '..', 'public', 'index.html'), 'utf8');
   assert.ok(html.includes('id="btnOpenConfirmationModal"'), 'Debe existir el botón btnOpenConfirmationModal');
@@ -162,6 +200,7 @@ test('UI Frontend: Botón y modal del Protocolo de Confirmación presentes en pu
   assert.ok(html.includes('id="confirmationModal"'), 'Debe existir el modal confirmationModal');
   assert.ok(html.includes('id="btnStartConfProtocol"'), 'Debe existir el botón para iniciar protocolo');
   assert.ok(html.includes('id="confConsoleLog"'), 'Debe existir la consola de eventos en tiempo real');
+  assert.ok(html.includes('value="failed"'), 'Debe existir la opción para filtrar candidatos con error');
 });
 
 test('Despliegue Centralizado en Render: Configuración correcta y eliminación de Vercel', () => {
@@ -185,6 +224,8 @@ test('Despliegue Centralizado en Render: Configuración correcta y eliminación 
   }
 });
 
+const originalSeedContent = fs.readFileSync(path.join(__dirname, '..', 'src', 'seed-recovery.json'), 'utf8');
+
 test.after(() => {
   database.db.exec(`
     UPDATE appointments 
@@ -193,5 +234,6 @@ test.after(() => {
         confirmation_variant = NULL,
         confirmation_error = NULL
   `);
-  database.saveToSeedRecovery();
+  // Restaurar el seed-recovery original para no ensuciar git con timestamps modificados
+  fs.writeFileSync(path.join(__dirname, '..', 'src', 'seed-recovery.json'), originalSeedContent, 'utf8');
 });

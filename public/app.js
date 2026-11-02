@@ -644,6 +644,7 @@ function setupEventListeners() {
   // Solicitar Código de Vinculación de 8 Dígitos (Pairing Code)
   const btnPairing = document.getElementById('btnGetPairingCode');
   if (btnPairing) {
+    btnPairing.addEventListener('click', async () => {
       const phoneInput = document.getElementById('inputPairingPhone');
       const phone = phoneInput ? phoneInput.value.trim() : '';
       if (!phone) {

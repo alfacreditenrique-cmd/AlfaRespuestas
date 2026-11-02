@@ -142,9 +142,9 @@ class ConfirmationProtocolService {
 
       const dateLabel = scheduler.getDateLabel(apt.date);
       const time12h = scheduler.formatTime12h(apt.time_slot);
-      const isSent = Boolean(apt.confirmation_sent_at || apt.confirmation_status === 'sent');
       const isFailed = apt.confirmation_status === 'failed';
-      const status = isSent ? 'sent' : (isFailed ? 'failed' : 'pending');
+      const isSent = !isFailed && Boolean(apt.confirmation_sent_at || apt.confirmation_status === 'sent');
+      const status = isFailed ? 'failed' : (isSent ? 'sent' : 'pending');
 
       const isDuplicateInList = seenPhones.has(resolvedPhone);
       seenPhones.add(resolvedPhone);
@@ -171,6 +171,8 @@ class ConfirmationProtocolService {
 
       if (filter === 'pending' && status !== 'pending') continue;
       if (filter === 'sent' && status !== 'sent') continue;
+      if (filter === 'failed' && status !== 'failed') continue;
+      if (filter === 'unconfirmed' && status === 'sent') continue;
 
       result.push(item);
     }
@@ -274,13 +276,30 @@ class ConfirmationProtocolService {
       variantRotation = 'sequential' // 'sequential' or 'random'
     } = options;
 
+    if (!dryRun) {
+      const waStatus = whatsappService.getStatus();
+      if (waStatus.status !== 'CONNECTED' || !whatsappService.sock) {
+        return {
+          success: false,
+          message: `WhatsApp no está conectado (${waStatus.status}). Por favor vincula tu WhatsApp escaneando el código QR en el panel antes de iniciar el protocolo.`
+        };
+      }
+    }
+
+    const candidates = this.getCandidates('unconfirmed');
+    const totalPending = candidates.length;
+
+    if (totalPending === 0) {
+      return {
+        success: false,
+        message: 'No hay candidatos pendientes de confirmación. Todos los postulantes activos ya fueron confirmados.'
+      };
+    }
+
     this.isRunning = true;
     this.isPaused = false;
     this.activeRunId = `run_${Date.now()}`;
     this.processedPhones.clear();
-
-    const candidates = this.getCandidates('pending');
-    const totalPending = candidates.length;
 
     this.emit('protocol_started', {
       runId: this.activeRunId,
