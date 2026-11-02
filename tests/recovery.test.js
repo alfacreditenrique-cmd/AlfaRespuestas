@@ -99,7 +99,7 @@ test('Recuperación: conciliación de candidato Ronald Espinoza desde mensaje co
   assert.match(recovered[0].candidate_name, /Ronald Espinoza/i);
   assert.equal(recovered[0].position, 'Oficial de Crédito');
   assert.equal(recovered[0].date, '2025-11-04');
-  assert.equal(recovered[0].time_slot, '11:15');
+  assert.equal(recovered[0].time_slot, '11:30', 'Debe reasignar al turno libre más próximo (11:30) ante colisión en 11:15');
   assert.match(recovered[0].notes, /TURNO COMPARTIDO/);
 
   // La base de datos debe contener a ambos candidatos

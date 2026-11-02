@@ -90,7 +90,11 @@ class FallbackDatabaseSync {
                 time_slot: a.time_slot,
                 status: a.status || 'confirmada',
                 notes: a.notes || '',
-                notified_at: a.notified_at || now,
+                notified_at: a.notified_at || null,
+                confirmation_sent_at: a.confirmation_sent_at || null,
+                confirmation_status: a.confirmation_status || (a.confirmation_sent_at ? 'sent' : 'pending'),
+                confirmation_variant: a.confirmation_variant || null,
+                confirmation_error: a.confirmation_error || null,
                 created_at: a.created_at || now,
                 updated_at: a.updated_at || now
               });
@@ -353,6 +357,17 @@ class FallbackDatabaseSync {
     if (s.includes('INSERT INTO appointments') && s.includes("'confirmada'")) {
       return {
         run: (name, phone, jid, position, date, time_slot, notes, created_at, updated_at) => {
+          const isTaken = self.appointments.some(a =>
+            a.date === date &&
+            a.time_slot === time_slot &&
+            (a.status === 'confirmada' || a.status === 'reprogramada')
+          );
+          if (isTaken) {
+            const err = new Error('UNIQUE constraint failed: appointments.date, appointments.time_slot');
+            err.code = 'SQLITE_CONSTRAINT_UNIQUE';
+            err.errcode = 2067;
+            throw err;
+          }
           const id = ++self.lastAppointmentId;
           const apt = {
             id,
@@ -378,6 +393,20 @@ class FallbackDatabaseSync {
     if (s.includes('INSERT INTO appointments') && !s.includes("'confirmada'")) {
       return {
         run: (name, phone, jid, position, date, time_slot, status, notes, notified_at, created_at, updated_at) => {
+          const aptStatus = status || 'confirmada';
+          if (aptStatus === 'confirmada' || aptStatus === 'reprogramada') {
+            const isTaken = self.appointments.some(a =>
+              a.date === date &&
+              a.time_slot === time_slot &&
+              (a.status === 'confirmada' || a.status === 'reprogramada')
+            );
+            if (isTaken) {
+              const err = new Error('UNIQUE constraint failed: appointments.date, appointments.time_slot');
+              err.code = 'SQLITE_CONSTRAINT_UNIQUE';
+              err.errcode = 2067;
+              throw err;
+            }
+          }
           const id = ++self.lastAppointmentId;
           const apt = {
             id,
@@ -387,7 +416,7 @@ class FallbackDatabaseSync {
             position,
             date,
             time_slot,
-            status: status || 'confirmada',
+            status: aptStatus,
             notes: notes || '',
             notified_at: notified_at || null,
             created_at,
@@ -554,6 +583,69 @@ class FallbackDatabaseSync {
             return { changes: 1 };
           }
           return { changes: 0 };
+        }
+      };
+    }
+
+    // 9b. Marcar confirmación enviada
+    if (s.includes('UPDATE appointments SET confirmation_sent_at = ?')) {
+      return {
+        run: (sentAt, variant, updatedAt, id) => {
+          const found = self.appointments.find(a => a.id === Number(id));
+          if (found) {
+            found.confirmation_sent_at = sentAt;
+            found.confirmation_status = 'sent';
+            found.confirmation_variant = Number(variant) || 1;
+            found.confirmation_error = null;
+            found.updated_at = updatedAt;
+            return { changes: 1 };
+          }
+          return { changes: 0 };
+        }
+      };
+    }
+
+    // 9c. Marcar fallo de confirmación
+    if (s.includes('UPDATE appointments SET confirmation_status = \'failed\'')) {
+      return {
+        run: (error, updatedAt, id) => {
+          const found = self.appointments.find(a => a.id === Number(id));
+          if (found) {
+            found.confirmation_status = 'failed';
+            found.confirmation_error = error;
+            found.updated_at = updatedAt;
+            return { changes: 1 };
+          }
+          return { changes: 0 };
+        }
+      };
+    }
+
+    // 9d. Listar candidatos para confirmación
+    if (s.includes('SELECT * FROM appointments WHERE status IN (\'confirmada\', \'reprogramada\') ORDER BY date ASC, time_slot ASC, id ASC')) {
+      return {
+        all: () => {
+          return self.appointments
+            .filter(a => a.status === 'confirmada' || a.status === 'reprogramada')
+            .sort((a, b) => (a.date || '').localeCompare(b.date || '') || (a.time_slot || '').localeCompare(b.time_slot || '') || a.id - b.id);
+        }
+      };
+    }
+
+    // 9e. Estadísticas de confirmación
+    if (s.includes('SUM(CASE WHEN confirmation_sent_at IS NOT NULL OR confirmation_status = \'sent\'')) {
+      return {
+        get: () => {
+          let total = 0, sent = 0, pending = 0, failed = 0;
+          for (const a of self.appointments) {
+            if (a.status === 'confirmada' || a.status === 'reprogramada') {
+              total++;
+              if (a.confirmation_sent_at || a.confirmation_status === 'sent') sent++;
+              else if (a.confirmation_status === 'failed') failed++;
+              else pending++;
+            }
+          }
+          return { total, sent, pending, failed };
         }
       };
     }

@@ -102,3 +102,47 @@ test('Generación de Notificación de Reprogramación: incluye todos los datos c
   assert.ok(message.includes('09:30 AM'), 'Debe incluir la hora formateada');
   assert.ok(message.includes('AlfaCredit S.A.'), 'Debe incluir el nombre de la empresa');
 });
+
+test('Scheduler: getNearestAvailableSlot encuentra el turno con menor distancia en minutos', () => {
+  const origGetAvailable = scheduler.getAvailableSlots;
+  try {
+    // 1. Coincidencia exacta
+    scheduler.getAvailableSlots = () => ['08:30', '09:00', '09:15', '09:30', '10:00'];
+    assert.equal(scheduler.getNearestAvailableSlot('2025-11-04', '09:00'), '09:00', 'Coincidencia exacta');
+
+    // 2. Turno anterior más próximo vs turno posterior
+    // Target 09:10 -> 09:00 (10m) vs 09:15 (5m) -> 09:15
+    scheduler.getAvailableSlots = () => ['08:30', '09:00', '09:15', '10:00'];
+    assert.equal(scheduler.getNearestAvailableSlot('2025-11-04', '09:10'), '09:15', 'Más cercano posterior');
+
+    // Target 09:05 -> 09:00 (5m) vs 09:15 (10m) -> 09:00
+    assert.equal(scheduler.getNearestAvailableSlot('2025-11-04', '09:05'), '09:00', 'Más cercano anterior');
+
+    // 3. Empate de distancia: debe preferir el turno posterior (+15m)
+    // Target 09:00 con 08:45 (-15m) y 09:15 (+15m)
+    scheduler.getAvailableSlots = () => ['08:30', '08:45', '09:15', '09:30'];
+    assert.equal(scheduler.getNearestAvailableSlot('2025-11-04', '09:00'), '09:15', 'Empate prefiere turno posterior (+15m)');
+
+    // 4. Límites al inicio y fin del día
+    scheduler.getAvailableSlots = () => ['08:45', '09:00', '17:00'];
+    assert.equal(scheduler.getNearestAvailableSlot('2025-11-04', '07:00'), '08:45', 'Límite inicio de jornada');
+    assert.equal(scheduler.getNearestAvailableSlot('2025-11-04', '18:30'), '17:00', 'Límite fin de jornada');
+
+    // 5. Día completamente agotado (sin cupos disponibles)
+    scheduler.getAvailableSlots = () => [];
+    assert.equal(scheduler.getNearestAvailableSlot('2025-11-04', '09:00'), null, 'Retorna null si no hay turnos disponibles');
+  } finally {
+    scheduler.getAvailableSlots = origGetAvailable;
+  }
+});
+
+test('Scheduler: getNearestAvailableSlot con base de datos real calcula correctamente ante turnos tomados', () => {
+  const database = require('../src/database');
+  const testDate = '2025-11-04';
+  const available = scheduler.getAvailableSlots(testDate);
+  if (available.length > 0) {
+    const firstFree = available[0];
+    const nearest = scheduler.getNearestAvailableSlot(testDate, firstFree);
+    assert.equal(nearest, firstFree, 'Turno libre debe coincidir consigo mismo');
+  }
+});

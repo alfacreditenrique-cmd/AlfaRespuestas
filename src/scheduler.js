@@ -105,6 +105,39 @@ const scheduler = {
     return available.length > 0 ? available[0] : null;
   },
 
+  // Obtener el turno disponible más próximo a una hora objetivo dentro del mismo día
+  getNearestAvailableSlot(dateId, targetSlot) {
+    const available = this.getAvailableSlots(dateId);
+    if (!available || available.length === 0) return null;
+    if (!targetSlot) return available[0];
+    const targetTrimmed = String(targetSlot).trim();
+    if (available.includes(targetTrimmed)) return targetTrimmed;
+
+    const toMinutes = (timeStr) => {
+      const parts = timeStr.split(':').map(Number);
+      if (parts.length < 2 || isNaN(parts[0]) || isNaN(parts[1])) return null;
+      return parts[0] * 60 + parts[1];
+    };
+
+    const targetMin = toMinutes(targetTrimmed);
+    if (targetMin === null) return available[0];
+
+    let bestSlot = available[0];
+    let minDiff = Math.abs(toMinutes(bestSlot) - targetMin);
+
+    for (let i = 1; i < available.length; i++) {
+      const slot = available[i];
+      const slotMin = toMinutes(slot);
+      const diff = Math.abs(slotMin - targetMin);
+      // En caso de empate en distancia, preferir el turno posterior (+15m)
+      if (diff < minDiff || (diff === minDiff && slotMin > toMinutes(bestSlot))) {
+        minDiff = diff;
+        bestSlot = slot;
+      }
+    }
+    return bestSlot;
+  },
+
   // Alerta de cupos críticos (10 turnos o menos)
   isCriticalRemaining(dateId) {
     const remaining = this.getRemainingCount(dateId);

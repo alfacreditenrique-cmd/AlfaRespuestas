@@ -1059,12 +1059,20 @@ class WhatsAppService {
       if (database.getAppointmentByPhone(jid) || database.getAppointmentByPhone(phone)) continue;
       try {
         const shared = database.isSlotTaken(chat.apt.date, chat.apt.time_slot);
+        let finalSlot = chat.apt.time_slot;
+        if (shared) {
+          const nearest = scheduler.getNearestAvailableSlot(chat.apt.date, chat.apt.time_slot);
+          if (nearest) {
+            finalSlot = nearest;
+          }
+        }
         const apt = database.createAppointment({
           ...chat.apt,
+          time_slot: finalSlot,
           phone_number: phone,
           jid,
           recovery: true,
-          notes: 'Recuperada del historial de WhatsApp' + (shared ? ' ⚠️ TURNO COMPARTIDO CON OTRA CITA, REVISAR' : '')
+          notes: 'Recuperada del historial de WhatsApp' + (shared ? ` ⚠️ TURNO COMPARTIDO CON OTRA CITA (original: ${chat.apt.time_slot}), REASIGNADO AL HORARIO MÁS PRÓXIMO (${finalSlot})` : '')
         });
         recovered.push(apt);
         this.emitEvent('new_appointment', apt);

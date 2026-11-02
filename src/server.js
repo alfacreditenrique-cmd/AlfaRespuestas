@@ -12,10 +12,11 @@ const whatsappService = require('./whatsapp');
 
 const fs = require('fs');
 
-const isServerless = Boolean(process.env.VERCEL || process.env.SERVERLESS);
+const isServerless = Boolean(process.env.SERVERLESS);
 const app = express();
 const server = isServerless ? null : http.createServer(app);
 const wss = isServerless ? null : new WebSocket.Server({ server });
+const { confirmationProtocol, CONFIRMATION_VARIANTS } = require('./confirmation-protocol');
 
 function getPublicDir() {
   const candidates = [
@@ -48,6 +49,9 @@ function broadcast(eventType, data) {
     }
   });
 }
+
+// Conectar emisor del protocolo de confirmación al WebSocket
+confirmationProtocol.setBroadcast(broadcast);
 
 // Suscribir eventos de WhatsApp para reenviar al panel si WebSocket está disponible
 if (wss) {
@@ -485,7 +489,7 @@ app.post('/api/whatsapp/session-restore', express.json({ limit: '15mb' }), async
 // 10d. Portal Web Público de Auto-Agendamiento para Postulantes (Plan B 0% riesgo de bloqueo de WhatsApp)
 app.post('/api/public/agendar', async (req, res) => {
   try {
-    const { candidate_name, phone_number, position, date } = req.body || {};
+    const { candidate_name, phone_number, position, date, time_slot } = req.body || {};
     const nameClean = String(candidate_name || '').trim();
     const phoneDigits = String(phone_number || '').replace(/[^0-9]/g, '');
 
@@ -519,30 +523,66 @@ app.post('/api/public/agendar', async (req, res) => {
     }
 
     const prior = database.getAppointmentByPhone(phoneDigits);
-    let nextSlot = scheduler.getNextAvailableSlot(dateObj.id);
-    if (!nextSlot && (!prior || prior.date !== dateObj.id)) {
+
+    // Si ya tenía una cita previa activa con ese teléfono, liberarla antes de asignar el nuevo turno
+    if (prior) {
+      database.cancelAppointment(prior.id, 'Reprogramada por el postulante desde portal web /agendar');
+    }
+
+    const rawSlot = time_slot ? String(time_slot).trim() : null;
+    const requestedSlot = (rawSlot && CONFIG.TIME_SLOTS.includes(rawSlot)) ? rawSlot : null;
+    const targetSlot = requestedSlot || (prior && prior.date === dateObj.id ? prior.time_slot : '08:30');
+
+    let chosenSlot;
+    if (requestedSlot && !database.isSlotTaken(dateObj.id, requestedSlot)) {
+      chosenSlot = requestedSlot;
+    } else {
+      chosenSlot = scheduler.getNearestAvailableSlot(dateObj.id, targetSlot) || scheduler.getNextAvailableSlot(dateObj.id);
+    }
+
+    if (!chosenSlot) {
       return res.status(409).json({
         success: false,
         error: `Lo sentimos, los cupos para el ${dateObj.label} se han agotado. Por favor elige otra fecha disponible.`
       });
     }
 
-    // Si ya tenía una cita previa activa con ese teléfono, liberarla antes de asignar el nuevo turno
-    if (prior) {
-      database.cancelAppointment(prior.id, 'Reprogramada por el postulante desde portal web /agendar');
-      if (prior.date === dateObj.id) {
-        nextSlot = scheduler.getNextAvailableSlot(dateObj.id) || prior.time_slot;
+    let appointment = null;
+    let attempts = 0;
+    const maxAttempts = 5;
+
+    while (!appointment && attempts < maxAttempts) {
+      attempts++;
+      try {
+        appointment = database.createAppointment({
+          candidate_name: nameClean,
+          phone_number: phoneDigits,
+          position: posObj.title,
+          date: dateObj.id,
+          time_slot: chosenSlot,
+          notes: prior ? `Reprogramada vía Portal Web (/agendar) desde cita #${prior.id}` : 'Agendado por el postulante vía Portal Web (/agendar)'
+        });
+      } catch (err) {
+        if (err.message && err.message.includes('ya se encuentra ocupado')) {
+          chosenSlot = scheduler.getNearestAvailableSlot(dateObj.id, targetSlot) || scheduler.getNextAvailableSlot(dateObj.id);
+          if (!chosenSlot) {
+            return res.status(409).json({
+              success: false,
+              error: `Lo sentimos, los cupos para el ${dateObj.label} se han agotado. Por favor elige otra fecha disponible.`
+            });
+          }
+        } else {
+          throw err;
+        }
       }
     }
 
-    const appointment = database.createAppointment({
-      candidate_name: nameClean,
-      phone_number: phoneDigits,
-      position: posObj.title,
-      date: dateObj.id,
-      time_slot: nextSlot,
-      notes: prior ? `Reprogramada vía Portal Web (/agendar) desde cita #${prior.id}` : 'Agendado por el postulante vía Portal Web (/agendar)'
-    });
+    if (!appointment) {
+      return res.status(409).json({
+        success: false,
+        error: `No se pudo asignar un turno disponible debido a alta concurrencia. Por favor reintenta.`
+      });
+    }
 
     const ticket = scheduler.generateTicket(appointment);
     const normalized = normalizeAppointment(appointment);
@@ -607,6 +647,105 @@ app.patch('/api/dates/:id', (req, res) => {
     broadcast('dates_updated', database.listDates());
     broadcast('stats_updated', database.getStats());
     res.json({ success: true, date: updated });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// ==========================================
+// PROTOCOLO DE CONFIRMACIÓN DE CITAS EN TIEMPO REAL
+// ==========================================
+
+// Estado del protocolo de confirmación
+app.get('/api/confirmation-protocol/status', (req, res) => {
+  try {
+    const status = confirmationProtocol.getStatus();
+    res.json({
+      success: true,
+      ...status,
+      variants: CONFIRMATION_VARIANTS.map(v => ({ id: v.id, code: v.code, title: v.title }))
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Listado de candidatos a confirmar (con filtros all, pending, sent)
+app.get('/api/confirmation-protocol/candidates', (req, res) => {
+  try {
+    const filter = req.query.filter || 'all';
+    const candidates = confirmationProtocol.getCandidates(filter);
+    const stats = database.getConfirmationStats();
+    res.json({
+      success: true,
+      count: candidates.length,
+      candidates,
+      stats
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Iniciar protocolo de confirmación en segundo plano
+app.post('/api/confirmation-protocol/start', async (req, res) => {
+  try {
+    const { delayMinMs, delayMaxMs, dryRun, variantRotation } = req.body || {};
+    const result = await confirmationProtocol.startProtocol({
+      delayMinMs,
+      delayMaxMs,
+      dryRun: Boolean(dryRun),
+      variantRotation
+    });
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Pausar protocolo
+app.post('/api/confirmation-protocol/pause', (req, res) => {
+  try {
+    const result = confirmationProtocol.pauseProtocol();
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Reanudar protocolo
+app.post('/api/confirmation-protocol/resume', (req, res) => {
+  try {
+    const result = confirmationProtocol.resumeProtocol();
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Detener protocolo
+app.post('/api/confirmation-protocol/stop', (req, res) => {
+  try {
+    const result = confirmationProtocol.stopProtocol();
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Enviar confirmación a un candidato individual
+app.post('/api/confirmation-protocol/send-single', async (req, res) => {
+  try {
+    const { appointment_id, variant_id, dryRun, force } = req.body || {};
+    if (!appointment_id) {
+      return res.status(400).json({ success: false, error: 'appointment_id es requerido' });
+    }
+    const result = await confirmationProtocol.sendSingle(appointment_id, {
+      variantId: variant_id,
+      dryRun: Boolean(dryRun),
+      force: Boolean(force)
+    });
+    res.json(result);
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
   }
@@ -811,7 +950,7 @@ app.use((err, req, res, next) => {
 
 // Túnel HTTPS público automático (localhost.run vía OpenSSH nativo) cuando corre en PC local
 function startPublicTunnel(port) {
-  if (process.env.RENDER || process.env.RAILWAY_ENVIRONMENT || process.env.VERCEL || process.env.DISABLE_TUNNEL === 'true') {
+  if (process.env.RENDER || process.env.RAILWAY_ENVIRONMENT || process.env.DISABLE_TUNNEL === 'true') {
     return;
   }
   try {

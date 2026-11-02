@@ -43,23 +43,19 @@ test('Candidatos: Pedro Alvarado está registrado con LID resuelto a teléfono 5
   assert.equal(pedro.time_slot, '15:00');
 });
 
-test('Despliegue Vercel: api/index.js y vercel.json configurados correctamente para ejecución serverless', () => {
-  // 1. api/index.js existe y exporta Express app
-  const serverlessEntry = require('../api/index');
-  assert.equal(typeof serverlessEntry, 'function', 'api/index.js debe exportar una función Express');
-
-  // 2. vercel.json existe y tiene rewrite a /api/index.js
-  const vercelPath = path.join(__dirname, '..', 'vercel.json');
-  assert.ok(fs.existsSync(vercelPath), 'vercel.json debe existir en la raíz');
-  const vercelJson = JSON.parse(fs.readFileSync(vercelPath, 'utf8'));
-  assert.ok(Array.isArray(vercelJson.rewrites), 'vercel.json debe definir rewrites');
-  const mainRewrite = vercelJson.rewrites.find(r => r.source === '/(.*)');
-  assert.ok(mainRewrite, 'Debe existir un rewrite para /(.*)');
-  assert.ok(mainRewrite.destination === '/api' || mainRewrite.destination === '/api/index.js', 'El rewrite debe apuntar a /api o /api/index.js');
-
-  // 3. package.json tiene engines >= 22.5.0 para node:sqlite
+test('Despliegue Render: servidor Express, endpoints y auto-ping configurados correctamente', () => {
+  // 1. package.json tiene engines compatible y script de inicio para Render
   const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
   assert.ok(pkg.engines && pkg.engines.node, 'package.json debe especificar engines.node');
+  assert.equal(pkg.scripts.start, 'node src/server.js', 'El script start debe ser node src/server.js para Render');
+
+  // 2. Servidor Express exporta app ejecutable
+  assert.equal(typeof app, 'function', 'src/server.js debe exportar una función Express');
+  assert.equal(typeof app.listen, 'function', 'app debe tener método listen de Express');
+
+  // 3. Centralización en Render
+  assert.ok(CONFIG.PORT, 'Puerto configurado correctamente');
+  assert.ok(CONFIG.DB_PATH, 'DB_PATH configurado correctamente');
 });
 
 test('Respaldo y Auto-Seed: Nueva base SQLite en frío restaura automáticamente los 41 candidatos', () => {

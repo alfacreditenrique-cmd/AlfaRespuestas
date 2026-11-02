@@ -6,3 +6,7 @@ data/*.sqlite*
 data/backups/
 data/public_url.txt
 *.log
+*.sqlite
+!data/alfa_citas.sqlite
+.agents/
+data/live_dispatch_results.json

@@ -415,6 +415,38 @@ test('API Plan B Anti-Bloqueo: GET /agendar sirve portal público y POST /api/pu
   });
   assert.equal(rebookRes.status, 201);
   assert.equal(database.isSlotTaken('2025-11-04', '08:30'), false, 'El turno anterior debe haberse liberado');
+
+  // 5. Agendamiento con time_slot explícito libre
+  const slotRes = await fetch(`${baseUrl}/api/public/agendar`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      candidate_name: 'Marcos Aurelio Ramos',
+      phone_number: '88553322',
+      position: 'Oficial de Crédito',
+      date: '2025-11-04',
+      time_slot: '10:15'
+    })
+  });
+  assert.equal(slotRes.status, 201);
+  const slotData = await slotRes.json();
+  assert.equal(slotData.appointment.time_slot, '10:15');
+
+  // 6. Agendamiento solicitando un time_slot ya ocupado -> reasigna automáticamente al más próximo
+  const collisionRes = await fetch(`${baseUrl}/api/public/agendar`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      candidate_name: 'Gabriel Ernesto Silva',
+      phone_number: '88664433',
+      position: 'Promotor de Crédito',
+      date: '2025-11-04',
+      time_slot: '10:15'
+    })
+  });
+  assert.equal(collisionRes.status, 201);
+  const collisionData = await collisionRes.json();
+  assert.equal(collisionData.appointment.time_slot, '10:30', 'Debe reasignar al turno disponible más próximo a 10:15');
 });
 
 test('API Escudo Anti-Ban: POST /api/whatsapp/pause y POST /api/whatsapp/pairing-code', async () => {

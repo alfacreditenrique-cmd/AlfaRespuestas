@@ -422,3 +422,56 @@ test('WhatsApp Session: Re-vinculación freshRegistration persiste nuevas creden
   }
 });
 
+test('Database: Índice único parcial idx_appointments_unique_active_slot rechaza duplicados activos pero permite reutilizar cancelados', () => {
+  // 1. Crear una cita activa en fecha y hora específica
+  const apt1 = database.createAppointment({
+    candidate_name: 'Postulante Titular',
+    phone_number: '50588880001',
+    position: 'Oficial de Crédito',
+    date: '2025-11-04',
+    time_slot: '09:00'
+  });
+  assert.ok(apt1 && apt1.id > 0);
+
+  // 2. Intentar crear una cita activa duplicada vía createAppointment debe ser rechazado
+  assert.throws(
+    () => {
+      database.createAppointment({
+        candidate_name: 'Postulante Colisión',
+        phone_number: '50588880002',
+        position: 'Promotor de Crédito',
+        date: '2025-11-04',
+        time_slot: '09:00'
+      });
+    },
+    /El turno del 2025-11-04 a las 09:00 ya se encuentra ocupado/
+  );
+
+  // 3. Intentar inserción directa en SQL con status activo ('confirmada') debe disparar SQLITE_CONSTRAINT_UNIQUE
+  assert.throws(
+    () => {
+      database.db.prepare(`
+        INSERT INTO appointments (candidate_name, phone_number, position, date, time_slot, status, created_at, updated_at)
+        VALUES ('Inyección Directa', '50588880003', 'Oficial de Crédito', '2025-11-04', '09:00', 'confirmada', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      `).run();
+    },
+    (err) => err.code === 'ERR_SQLITE_ERROR' || err.code === 'SQLITE_CONSTRAINT_UNIQUE' || /UNIQUE constraint failed/i.test(err.message)
+  );
+
+  // 4. Cancelar la cita activa inicial (status -> 'cancelada')
+  database.cancelAppointment(apt1.id, 'Cancelado para prueba de reutilización');
+  assert.equal(database.isSlotTaken('2025-11-04', '09:00'), false, 'El turno debe quedar libre tras cancelación');
+
+  // 5. Crear una nueva cita en el mismo turno 09:00 debe tener éxito sin colisión
+  const apt2 = database.createAppointment({
+    candidate_name: 'Nuevo Postulante Reutilizado',
+    phone_number: '50588880004',
+    position: 'Desembolsador de Crédito',
+    date: '2025-11-04',
+    time_slot: '09:00'
+  });
+  assert.ok(apt2 && apt2.id > 0);
+  assert.equal(apt2.time_slot, '09:00');
+  assert.equal(apt2.status, 'confirmada');
+});
+

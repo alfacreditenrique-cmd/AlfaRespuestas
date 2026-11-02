@@ -10,8 +10,11 @@
       "status": "confirmada",
       "notes": "Agendado automáticamente vía WhatsApp bot",
       "notified_at": "2026-10-29T02:23:34.357Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-29T02:23:34.357Z",
-      "updated_at": "2026-10-29T02:23:34.357Z"
+      "updated_at": "2026-11-02T22:59:39.448Z"
     },
     {
       "candidate_name": "Postulante Confirmado (ID 106674740297844)",
@@ -23,8 +26,11 @@
       "status": "confirmada",
       "notes": "Turno 08:45 AM reservado y recuperado desde sesión WhatsApp",
       "notified_at": "2026-10-29T02:23:34.357Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-29T02:23:34.357Z",
-      "updated_at": "2026-10-29T02:23:34.357Z"
+      "updated_at": "2026-11-02T22:58:01.873Z"
     },
     {
       "candidate_name": "Postulante Confirmado (ID 45222197215415)",
@@ -36,8 +42,11 @@
       "status": "confirmada",
       "notes": "Turno 09:00 AM reservado y recuperado desde sesión WhatsApp",
       "notified_at": "2026-10-29T02:23:34.357Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-29T02:23:34.357Z",
-      "updated_at": "2026-10-29T02:23:34.357Z"
+      "updated_at": "2026-11-02T22:58:01.990Z"
     },
     {
       "candidate_name": "Jiuver Alexander García Chavarría",
@@ -49,8 +58,11 @@
       "status": "confirmada",
       "notes": "Recuperada del historial de WhatsApp",
       "notified_at": "2026-10-29T02:23:34.357Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-29T02:23:34.357Z",
-      "updated_at": "2026-10-29T02:23:34.357Z"
+      "updated_at": "2026-11-02T22:58:02.100Z"
     },
     {
       "candidate_name": "Winston Porfirio Meza Martínez",
@@ -62,8 +74,11 @@
       "status": "confirmada",
       "notes": "Recuperada del historial de WhatsApp",
       "notified_at": "2026-10-29T02:23:34.357Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-29T02:23:34.357Z",
-      "updated_at": "2026-10-29T02:23:34.357Z"
+      "updated_at": "2026-11-02T22:58:02.210Z"
     },
     {
       "candidate_name": "Jose Manuel Garcia",
@@ -75,8 +90,11 @@
       "status": "confirmada",
       "notes": "Recuperada del historial de WhatsApp",
       "notified_at": "2026-10-29T02:23:34.357Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-29T02:23:34.357Z",
-      "updated_at": "2026-10-29T02:23:34.357Z"
+      "updated_at": "2026-11-02T22:58:02.320Z"
     },
     {
       "candidate_name": "Lidia del Rosario Velasquez Padilla",
@@ -88,6 +106,9 @@
       "status": "cancelada",
       "notes": "Recuperada del historial de WhatsApp | no es de SEBACO o lugares aledaños",
       "notified_at": "2026-10-29T15:37:12.219Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-29T02:23:34.357Z",
       "updated_at": "2026-10-29T15:37:12.219Z"
     },
@@ -101,8 +122,11 @@
       "status": "confirmada",
       "notes": "Recuperada del historial de WhatsApp",
       "notified_at": "2026-10-29T02:23:34.357Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-29T02:23:34.357Z",
-      "updated_at": "2026-10-29T02:23:34.357Z"
+      "updated_at": "2026-11-02T22:58:02.538Z"
     },
     {
       "candidate_name": "Jairo Rappaccioli Martinez",
@@ -114,8 +138,11 @@
       "status": "confirmada",
       "notes": "Recuperada del historial de WhatsApp",
       "notified_at": "2026-10-29T02:23:34.357Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-29T02:23:34.357Z",
-      "updated_at": "2026-10-29T02:23:34.357Z"
+      "updated_at": "2026-11-02T22:58:02.648Z"
     },
     {
       "candidate_name": "Francisco Rodríguez",
@@ -127,8 +154,11 @@
       "status": "confirmada",
       "notes": "Recuperada del historial de WhatsApp",
       "notified_at": "2026-10-29T02:23:34.357Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-29T02:23:34.357Z",
-      "updated_at": "2026-10-29T02:23:34.357Z"
+      "updated_at": "2026-11-02T22:58:02.758Z"
     },
     {
       "candidate_name": "Cristhopper Tyrone Mercado Pilarte",
@@ -140,8 +170,11 @@
       "status": "confirmada",
       "notes": "Recuperada del historial de WhatsApp",
       "notified_at": "2026-10-29T02:23:34.357Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-29T02:23:34.357Z",
-      "updated_at": "2026-10-29T02:23:34.357Z"
+      "updated_at": "2026-11-02T22:58:02.866Z"
     },
     {
       "candidate_name": "Luis Carlos Delgado Rayo",
@@ -153,8 +186,11 @@
       "status": "confirmada",
       "notes": "Recuperada del historial de WhatsApp",
       "notified_at": "2026-10-29T02:23:34.357Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-29T02:23:34.357Z",
-      "updated_at": "2026-10-29T02:23:34.357Z"
+      "updated_at": "2026-11-02T22:58:02.975Z"
     },
     {
       "candidate_name": "Nelson Alexander Meza Hernández",
@@ -166,8 +202,11 @@
       "status": "confirmada",
       "notes": "Recuperada del historial de WhatsApp",
       "notified_at": "2026-10-29T02:23:34.357Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-29T02:23:34.357Z",
-      "updated_at": "2026-10-29T02:23:34.357Z"
+      "updated_at": "2026-11-02T22:58:03.084Z"
     },
     {
       "candidate_name": "Alejandra José González Palacios",
@@ -179,8 +218,11 @@
       "status": "confirmada",
       "notes": "Recuperada del historial de WhatsApp",
       "notified_at": "2026-10-29T02:23:34.357Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-29T02:23:34.357Z",
-      "updated_at": "2026-10-29T02:23:34.357Z"
+      "updated_at": "2026-11-02T22:58:03.193Z"
     },
     {
       "candidate_name": "Dania Maradiaga Martinez",
@@ -192,8 +234,11 @@
       "status": "confirmada",
       "notes": "Recuperada del historial de WhatsApp",
       "notified_at": "2026-10-29T02:23:34.357Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-29T02:23:34.357Z",
-      "updated_at": "2026-10-29T02:23:34.357Z"
+      "updated_at": "2026-11-02T22:58:03.300Z"
     },
     {
       "candidate_name": "Postulante Confirmado (ID 101485933240503)",
@@ -205,8 +250,11 @@
       "status": "confirmada",
       "notes": "Turno 08:30 AM reservado y recuperado desde sesión WhatsApp",
       "notified_at": "2026-10-29T02:23:34.357Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-29T02:23:34.357Z",
-      "updated_at": "2026-10-29T02:23:34.357Z"
+      "updated_at": "2026-11-02T22:58:05.044Z"
     },
     {
       "candidate_name": "Elis Similex Rosales Paez",
@@ -218,8 +266,11 @@
       "status": "confirmada",
       "notes": "Recuperada del historial de WhatsApp",
       "notified_at": "2026-10-29T02:23:34.357Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-29T02:23:34.357Z",
-      "updated_at": "2026-10-29T02:23:34.357Z"
+      "updated_at": "2026-11-02T22:58:05.155Z"
     },
     {
       "candidate_name": "Maríaneia Morales Pérez",
@@ -231,8 +282,11 @@
       "status": "confirmada",
       "notes": "Recuperada del historial de WhatsApp",
       "notified_at": "2026-10-29T02:23:34.357Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-29T02:23:34.357Z",
-      "updated_at": "2026-10-29T02:23:34.357Z"
+      "updated_at": "2026-11-02T22:58:05.266Z"
     },
     {
       "candidate_name": "Asbell Eleazar Martínez Alarcón",
@@ -244,21 +298,27 @@
       "status": "confirmada",
       "notes": "Recuperada del historial de WhatsApp",
       "notified_at": "2026-10-29T02:23:34.357Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-29T02:23:34.357Z",
-      "updated_at": "2026-10-29T02:23:34.357Z"
+      "updated_at": "2026-11-02T22:58:05.375Z"
     },
     {
       "candidate_name": "Juan Alberto Chavarría aguirre",
-      "phone_number": "57256796233770",
+      "phone_number": "50586233770",
       "jid": "57256796233770@lid",
       "position": "Promotor de Crédito",
       "date": "2025-11-04",
-      "time_slot": "09:00",
+      "time_slot": "17:00",
       "status": "confirmada",
-      "notes": "Recuperada del historial de WhatsApp ⚠️ TURNO COMPARTIDO CON OTRA CITA, REVISAR",
-      "notified_at": "2026-10-29T15:51:46.540Z",
+      "notes": "Recuperada del historial de WhatsApp | Reasignado al horario más próximo (17:00) por colisión en 09:00",
+      "notified_at": "2026-11-02T22:14:03.689Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-29T14:10:26.846Z",
-      "updated_at": "2026-10-29T15:51:46.540Z"
+      "updated_at": "2026-11-02T22:58:04.936Z"
     },
     {
       "candidate_name": "Esmeyling Martínez",
@@ -270,8 +330,11 @@
       "status": "confirmada",
       "notes": "Agendado automáticamente vía WhatsApp bot",
       "notified_at": "2026-10-29T14:18:29.238Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-29T14:18:29.156Z",
-      "updated_at": "2026-10-29T14:18:29.238Z"
+      "updated_at": "2026-11-02T22:58:03.409Z"
     },
     {
       "candidate_name": "Daniela Kassandra Molina Castro",
@@ -283,8 +346,11 @@
       "status": "confirmada",
       "notes": "Agendado automáticamente vía WhatsApp bot",
       "notified_at": "2026-10-29T14:22:08.816Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-29T14:22:08.368Z",
-      "updated_at": "2026-10-29T14:22:08.816Z"
+      "updated_at": "2026-11-02T22:58:03.519Z"
     },
     {
       "candidate_name": "Napoleon García vivas",
@@ -296,8 +362,11 @@
       "status": "confirmada",
       "notes": "Agendado automáticamente vía WhatsApp bot",
       "notified_at": "2026-10-29T14:54:08.699Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-29T14:54:08.397Z",
-      "updated_at": "2026-10-29T14:54:08.699Z"
+      "updated_at": "2026-11-02T22:58:05.485Z"
     },
     {
       "candidate_name": "Karen castillo",
@@ -309,8 +378,11 @@
       "status": "confirmada",
       "notes": "Agendado automáticamente vía WhatsApp bot",
       "notified_at": "2026-10-29T15:03:06.541Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-29T15:03:05.855Z",
-      "updated_at": "2026-10-29T15:03:06.541Z"
+      "updated_at": "2026-11-02T22:58:05.594Z"
     },
     {
       "candidate_name": "Julio Cesar Hernandez Perez",
@@ -322,8 +394,11 @@
       "status": "confirmada",
       "notes": "Agendado automáticamente vía WhatsApp bot",
       "notified_at": "2026-10-29T15:05:42.374Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-29T15:05:42.357Z",
-      "updated_at": "2026-10-29T15:05:42.374Z"
+      "updated_at": "2026-11-02T22:58:05.704Z"
     },
     {
       "candidate_name": "José Miguel Baldizon Galeano",
@@ -335,8 +410,11 @@
       "status": "confirmada",
       "notes": "Agendado automáticamente vía WhatsApp bot",
       "notified_at": "2026-10-29T15:05:45.563Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-29T15:05:45.273Z",
-      "updated_at": "2026-10-29T15:05:45.563Z"
+      "updated_at": "2026-11-02T22:58:03.628Z"
     },
     {
       "candidate_name": "Karina Zambrana",
@@ -348,8 +426,11 @@
       "status": "confirmada",
       "notes": "Agendado automáticamente vía WhatsApp bot",
       "notified_at": "2026-10-29T15:06:29.698Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-29T15:06:29.385Z",
-      "updated_at": "2026-10-29T15:06:29.698Z"
+      "updated_at": "2026-11-02T22:58:03.736Z"
     },
     {
       "candidate_name": "Junior jose chavarria matus",
@@ -361,8 +442,11 @@
       "status": "confirmada",
       "notes": "Agendado automáticamente vía WhatsApp bot",
       "notified_at": "2026-10-29T15:25:41.549Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-29T15:25:41.261Z",
-      "updated_at": "2026-10-29T15:25:41.549Z"
+      "updated_at": "2026-11-02T22:58:05.811Z"
     },
     {
       "candidate_name": "Darwin Fabian Potosme Montalvan",
@@ -374,6 +458,9 @@
       "status": "cancelada",
       "notes": "Agendado automáticamente vía WhatsApp bot | No es de Sebaco ni de sus ciudades aledañas",
       "notified_at": "2026-10-29T15:36:05.841Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-29T15:33:40.600Z",
       "updated_at": "2026-10-29T15:36:05.841Z"
     },
@@ -387,8 +474,11 @@
       "status": "confirmada",
       "notes": "Agendado automáticamente vía WhatsApp bot",
       "notified_at": "2026-10-29T15:57:00.492Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-29T15:57:00.068Z",
-      "updated_at": "2026-10-29T15:57:00.492Z"
+      "updated_at": "2026-11-02T22:58:05.918Z"
     },
     {
       "candidate_name": "Kenia Gissel valle Mendez",
@@ -400,8 +490,11 @@
       "status": "confirmada",
       "notes": "Agendado automáticamente vía WhatsApp bot",
       "notified_at": "2026-10-29T16:24:26.939Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-29T16:24:26.809Z",
-      "updated_at": "2026-10-29T16:24:26.939Z"
+      "updated_at": "2026-11-02T22:58:02.430Z"
     },
     {
       "candidate_name": "Steven Jesus Zelaya",
@@ -413,8 +506,11 @@
       "status": "confirmada",
       "notes": "Agendado automáticamente vía WhatsApp bot",
       "notified_at": "2026-10-29T16:33:30.498Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-29T16:33:30.400Z",
-      "updated_at": "2026-10-29T16:33:30.498Z"
+      "updated_at": "2026-11-02T22:58:06.028Z"
     },
     {
       "candidate_name": "Ronald Espinoza",
@@ -426,8 +522,11 @@
       "status": "confirmada",
       "notes": "Candidato confirmado conciliado desde WhatsApp (Ronald Espinoza Vanegas)",
       "notified_at": "2026-10-29T16:50:39.244Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-29T16:50:39.244Z",
-      "updated_at": "2026-10-29T16:50:39.244Z"
+      "updated_at": "2026-11-02T22:58:03.845Z"
     },
     {
       "candidate_name": "Ana López",
@@ -439,8 +538,11 @@
       "status": "confirmada",
       "notes": "Recuperada del historial de WhatsApp",
       "notified_at": "2026-10-29T16:00:00.000Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-29T16:00:00.000Z",
-      "updated_at": "2026-10-29T16:00:00.000Z"
+      "updated_at": "2026-11-02T22:58:03.955Z"
     },
     {
       "candidate_name": "Pedro Alvarado",
@@ -452,8 +554,11 @@
       "status": "confirmada",
       "notes": "Recuperada del historial de WhatsApp",
       "notified_at": "2026-10-29T16:00:00.000Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-29T16:00:00.000Z",
-      "updated_at": "2026-10-29T16:00:00.000Z"
+      "updated_at": "2026-11-02T22:58:04.064Z"
     },
     {
       "candidate_name": "Carla Pérez",
@@ -465,8 +570,11 @@
       "status": "confirmada",
       "notes": "Recuperada del historial de WhatsApp",
       "notified_at": "2026-10-29T16:00:00.000Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-29T16:00:00.000Z",
-      "updated_at": "2026-10-29T16:00:00.000Z"
+      "updated_at": "2026-11-02T22:58:04.174Z"
     },
     {
       "candidate_name": "Oscar Rene Valle",
@@ -478,8 +586,11 @@
       "status": "confirmada",
       "notes": "Recuperada del historial de WhatsApp",
       "notified_at": "2026-10-29T16:00:00.000Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-29T16:00:00.000Z",
-      "updated_at": "2026-10-29T16:00:00.000Z"
+      "updated_at": "2026-11-02T22:58:04.283Z"
     },
     {
       "candidate_name": "Silvia Orellana",
@@ -491,8 +602,11 @@
       "status": "confirmada",
       "notes": "Recuperada del historial de WhatsApp",
       "notified_at": "2026-10-29T16:00:00.000Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-29T16:00:00.000Z",
-      "updated_at": "2026-10-29T16:00:00.000Z"
+      "updated_at": "2026-11-02T22:58:04.392Z"
     },
     {
       "candidate_name": "Roberto Carlos Estrada",
@@ -504,8 +618,11 @@
       "status": "confirmada",
       "notes": "Recuperada del historial de WhatsApp",
       "notified_at": "2026-10-29T16:00:00.000Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-29T16:00:00.000Z",
-      "updated_at": "2026-10-29T16:00:00.000Z"
+      "updated_at": "2026-11-02T22:58:04.500Z"
     },
     {
       "candidate_name": "Luis Mora",
@@ -517,8 +634,11 @@
       "status": "confirmada",
       "notes": "Recuperada del historial de WhatsApp",
       "notified_at": "2026-10-29T16:00:00.000Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-29T16:00:00.000Z",
-      "updated_at": "2026-10-29T16:00:00.000Z"
+      "updated_at": "2026-11-02T22:58:06.137Z"
     },
     {
       "candidate_name": "Mario Ruiz",
@@ -530,8 +650,11 @@
       "status": "confirmada",
       "notes": "Recuperada del historial de WhatsApp",
       "notified_at": "2026-10-29T16:00:00.000Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-29T16:00:00.000Z",
-      "updated_at": "2026-10-29T16:00:00.000Z"
+      "updated_at": "2026-11-02T22:58:06.246Z"
     },
     {
       "candidate_name": "Elena Rostrán",
@@ -543,8 +666,11 @@
       "status": "confirmada",
       "notes": "Recuperada del historial de WhatsApp",
       "notified_at": "2026-10-29T16:00:00.000Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-29T16:00:00.000Z",
-      "updated_at": "2026-10-29T16:00:00.000Z"
+      "updated_at": "2026-11-02T22:58:06.354Z"
     },
     {
       "candidate_name": "Felipe Berríos Morales",
@@ -556,8 +682,11 @@
       "status": "confirmada",
       "notes": "Recuperada del historial de WhatsApp",
       "notified_at": "2026-10-29T16:00:00.000Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-29T16:00:00.000Z",
-      "updated_at": "2026-10-29T16:00:00.000Z"
+      "updated_at": "2026-11-02T22:58:06.464Z"
     },
     {
       "candidate_name": "LUZ ESTRELLA GUERRA SANCHEZ",
@@ -569,8 +698,11 @@
       "status": "confirmada",
       "notes": "Creada manualmente desde el panel administrativo",
       "notified_at": "2026-10-30T21:20:49.483Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-30T21:20:44.946Z",
-      "updated_at": "2026-10-30T21:20:49.483Z"
+      "updated_at": "2026-11-02T22:58:04.610Z"
     },
     {
       "candidate_name": "Nelson jarquin",
@@ -581,9 +713,12 @@
       "time_slot": "16:30",
       "status": "confirmada",
       "notes": "Agendado por el postulante vía Portal Web (/agendar)",
-      "notified_at": null,
+      "notified_at": "2026-11-02T21:05:59.476Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-30T21:21:27.477Z",
-      "updated_at": "2026-10-30T21:21:27.477Z"
+      "updated_at": "2026-11-02T22:58:04.718Z"
     },
     {
       "candidate_name": "Bernon Adolfo Murillo Reyna",
@@ -594,9 +729,12 @@
       "time_slot": "16:45",
       "status": "confirmada",
       "notes": "Agendado automáticamente vía WhatsApp bot",
-      "notified_at": null,
+      "notified_at": "2026-10-30T22:44:16.833Z",
+      "confirmation_sent_at": null,
+      "confirmation_status": "pending",
+      "confirmation_variant": null,
       "created_at": "2026-10-30T22:44:13.067Z",
-      "updated_at": "2026-10-30T22:44:13.067Z"
+      "updated_at": "2026-11-02T22:58:04.826Z"
     }
   ],
   "chat_states": [
@@ -644,15 +782,6 @@
       "selected_time": null,
       "candidate_name": null,
       "jid": "74062869045435@lid"
-    },
-    {
-      "phone_number": "87424344531017",
-      "step": "AWAITING_POSITION",
-      "selected_position": null,
-      "selected_date": null,
-      "selected_time": null,
-      "candidate_name": null,
-      "jid": "87424344531017@lid"
     },
     {
       "phone_number": "239410167689333",
@@ -736,15 +865,6 @@
       "jid": "78971597271125@lid"
     },
     {
-      "phone_number": "57256796233770",
-      "step": "AWAITING_POSITION",
-      "selected_position": null,
-      "selected_date": null,
-      "selected_time": null,
-      "candidate_name": null,
-      "jid": "57256796233770@lid"
-    },
-    {
       "phone_number": "204801472200958",
       "step": "AWAITING_POSITION",
       "selected_position": null,
@@ -761,15 +881,6 @@
       "selected_time": null,
       "candidate_name": null,
       "jid": "263561339219987@lid"
-    },
-    {
-      "phone_number": "9651412328582",
-      "step": "AWAITING_POSITION",
-      "selected_position": null,
-      "selected_date": null,
-      "selected_time": null,
-      "candidate_name": null,
-      "jid": "9651412328582@lid"
     },
     {
       "phone_number": "55177813999754",
@@ -790,22 +901,22 @@
       "jid": "83962970005600@lid"
     },
     {
-      "phone_number": "50930124898441",
+      "phone_number": "71210557821049",
       "step": "AWAITING_POSITION",
       "selected_position": null,
       "selected_date": null,
       "selected_time": null,
-      "candidate_name": "Enrique Castillo",
-      "jid": "50930124898441@lid"
+      "candidate_name": null,
+      "jid": "71210557821049@lid"
     },
     {
-      "phone_number": "168667862028437",
-      "step": "AWAITING_NAME",
-      "selected_position": "Promotor de Crédito",
-      "selected_date": "2025-11-04",
-      "selected_time": "16:45",
+      "phone_number": "63853295628368",
+      "step": "AWAITING_POSITION",
+      "selected_position": null,
+      "selected_date": null,
+      "selected_time": null,
       "candidate_name": null,
-      "jid": "168667862028437@lid"
+      "jid": "63853295628368@lid"
     }
   ]
 }

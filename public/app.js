@@ -124,6 +124,10 @@ function handleSocketMessage(msg) {
     state.config.publicUrl = data.publicUrl;
     updateTunnelBannerUI(data.publicUrl);
     showToast(`🌐 Enlace público activo: ${data.publicUrl}/agendar`, 'success');
+  } else if (event === 'confirmation_sent' || event === 'confirmation_failed') {
+    handleConfirmationSocketEvent(event, data);
+  } else if (event && event.startsWith('protocol_')) {
+    handleProtocolSocketEvent(event, data);
   }
 }
 
@@ -640,11 +644,6 @@ function setupEventListeners() {
   // Solicitar Código de Vinculación de 8 Dígitos (Pairing Code)
   const btnPairing = document.getElementById('btnGetPairingCode');
   if (btnPairing) {
-    btnPairing.addEventListener('click', async () => {
-      if (window.location.hostname.includes('vercel.app')) {
-        showToast('ℹ️ El bot de WhatsApp opera de forma continua en tu PC local (http://localhost:3000). Tu sesión de WhatsApp ya está conectada allí.', 'info');
-        return;
-      }
       const phoneInput = document.getElementById('inputPairingPhone');
       const phone = phoneInput ? phoneInput.value.trim() : '';
       if (!phone) {
@@ -729,7 +728,7 @@ function setupEventListeners() {
   }
 
   // Cerrar modales al hacer clic en el fondo oscuro
-  ['editModal', 'newModal', 'datesModal'].forEach(modalId => {
+  ['editModal', 'newModal', 'datesModal', 'confirmationModal'].forEach(modalId => {
     const modalEl = document.getElementById(modalId);
     if (modalEl) {
       modalEl.addEventListener('click', (e) => {
@@ -745,6 +744,9 @@ function setupEventListeners() {
       showToast('📦 Generando y descargando copia de seguridad de la base de datos...', 'info');
     });
   }
+
+  // Inicializar UI de Protocolo de Confirmación
+  setupConfirmationProtocolUI();
 }
 
 // ==========================================
@@ -1142,3 +1144,363 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
+
+// =========================================================
+// PROTOCOLO DE CONFIRMACIÓN DE CITAS EN TIEMPO REAL
+// =========================================================
+
+let confirmationCandidatesCache = [];
+let confirmationFilter = 'pending';
+
+function setupConfirmationProtocolUI() {
+  const btnOpen = document.getElementById('btnOpenConfirmationModal');
+  if (btnOpen) btnOpen.addEventListener('click', openConfirmationModal);
+
+  const btnClose = document.getElementById('btnCloseConfirmationModal');
+  if (btnClose) btnClose.addEventListener('click', closeConfirmationModal);
+
+  const btnDone = document.getElementById('btnDoneConfirmationModal');
+  if (btnDone) btnDone.addEventListener('click', closeConfirmationModal);
+
+  const btnStart = document.getElementById('btnStartConfProtocol');
+  if (btnStart) btnStart.addEventListener('click', startConfirmationProtocol);
+
+  const btnPause = document.getElementById('btnPauseConfProtocol');
+  if (btnPause) btnPause.addEventListener('click', pauseConfirmationProtocol);
+
+  const btnResume = document.getElementById('btnResumeConfProtocol');
+  if (btnResume) btnResume.addEventListener('click', resumeConfirmationProtocol);
+
+  const btnStop = document.getElementById('btnStopConfProtocol');
+  if (btnStop) btnStop.addEventListener('click', stopConfirmationProtocol);
+
+  const filterSelect = document.getElementById('confFilterSelect');
+  if (filterSelect) {
+    filterSelect.addEventListener('change', (e) => {
+      confirmationFilter = e.target.value;
+      loadConfirmationProtocolData();
+    });
+  }
+
+  const btnRefresh = document.getElementById('btnRefreshConfCandidates');
+  if (btnRefresh) {
+    btnRefresh.addEventListener('click', () => {
+      loadConfirmationProtocolData();
+      showToast('Lista de confirmación actualizada', 'info');
+    });
+  }
+
+  const btnClear = document.getElementById('btnClearConfLogs');
+  if (btnClear) {
+    btnClear.addEventListener('click', () => {
+      const logBox = document.getElementById('confConsoleLog');
+      if (logBox) logBox.innerHTML = '<div class="text-slate-500 italic">Consola limpia.</div>';
+    });
+  }
+}
+
+function openConfirmationModal() {
+  const modal = document.getElementById('confirmationModal');
+  if (modal) {
+    modal.classList.remove('hidden');
+    loadConfirmationProtocolData();
+  }
+}
+
+function closeConfirmationModal() {
+  const modal = document.getElementById('confirmationModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+async function loadConfirmationProtocolData() {
+  try {
+    const res = await fetch(`/api/confirmation-protocol/candidates?filter=${confirmationFilter}`);
+    const data = await res.json();
+    if (data.success) {
+      confirmationCandidatesCache = data.candidates || [];
+      renderConfirmationCandidates(confirmationCandidatesCache);
+      updateConfirmationStatsUI(data.stats);
+    }
+
+    const statusRes = await fetch('/api/confirmation-protocol/status');
+    const statusData = await statusRes.json();
+    if (statusData.success) {
+      updateConfirmationControlsUI(statusData);
+    }
+  } catch (err) {
+    console.error('Error cargando candidatos para confirmación:', err);
+    showToast('Error cargando lista de confirmación', 'error');
+  }
+}
+
+function updateConfirmationStatsUI(stats) {
+  if (!stats) return;
+  const elTotal = document.getElementById('confStatTotal');
+  const elSent = document.getElementById('confStatSent');
+  const elPending = document.getElementById('confStatPending');
+  const elProgressBar = document.getElementById('confProgressBar');
+  const elProgressPercent = document.getElementById('confProgressPercent');
+
+  if (elTotal) elTotal.textContent = stats.total || 0;
+  if (elSent) elSent.textContent = stats.sent || 0;
+  if (elPending) elPending.textContent = stats.pending || 0;
+
+  const total = Number(stats.total) || 1;
+  const sent = Number(stats.sent) || 0;
+  const pct = Math.min(100, Math.round((sent / total) * 100));
+
+  if (elProgressBar) elProgressBar.style.width = `${pct}%`;
+  if (elProgressPercent) elProgressPercent.textContent = `${pct}%`;
+}
+
+function updateConfirmationControlsUI(status) {
+  const btnStart = document.getElementById('btnStartConfProtocol');
+  const btnPause = document.getElementById('btnPauseConfProtocol');
+  const btnResume = document.getElementById('btnResumeConfProtocol');
+  const btnStop = document.getElementById('btnStopConfProtocol');
+  const statusBadge = document.getElementById('confLiveStatusBadge');
+  const statusText = document.getElementById('confLiveStatusText');
+
+  if (!btnStart || !status) return;
+
+  if (status.isRunning) {
+    btnStart.classList.add('hidden');
+    btnStop.classList.remove('hidden');
+
+    if (status.isPaused) {
+      btnPause.classList.add('hidden');
+      btnResume.classList.remove('hidden');
+      if (statusBadge) statusBadge.className = 'text-xs px-2.5 py-1 rounded-md bg-amber-100 text-amber-800 font-semibold flex items-center gap-1.5';
+      if (statusText) statusText.textContent = 'En pausa temporal';
+    } else {
+      btnPause.classList.remove('hidden');
+      btnResume.classList.add('hidden');
+      if (statusBadge) statusBadge.className = 'text-xs px-2.5 py-1 rounded-md bg-teal-100 text-teal-800 font-semibold flex items-center gap-1.5 animate-pulse';
+      if (statusText) statusText.textContent = 'Enviando mensajes (Anti-ban)...';
+    }
+  } else {
+    btnStart.classList.remove('hidden');
+    btnPause.classList.add('hidden');
+    btnResume.classList.add('hidden');
+    btnStop.classList.add('hidden');
+    if (statusBadge) statusBadge.className = 'text-xs px-2.5 py-1 rounded-md bg-slate-200 text-slate-700 font-semibold flex items-center gap-1.5';
+    if (statusText) statusText.textContent = 'Listo para iniciar';
+  }
+}
+
+function renderConfirmationCandidates(candidates) {
+  const tbody = document.getElementById('confCandidatesTableBody');
+  const countEl = document.getElementById('confCandidatesCount');
+  if (!tbody) return;
+
+  if (countEl) countEl.textContent = candidates.length;
+
+  if (candidates.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="4" class="text-center py-8 text-slate-400">
+          <i class="fa-solid fa-circle-check text-2xl text-emerald-400 mb-1"></i>
+          <p class="font-medium">No hay candidatos en este filtro</p>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = candidates.map(c => {
+    let statusBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">Pendiente</span>';
+    if (c.confirmation_status === 'sent') {
+      const varTxt = c.confirmation_variant ? `Var ${c.confirmation_variant}` : 'Enviado';
+      statusBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800" title="Enviado: ${c.confirmation_sent_at || ''}">✅ ${varTxt}</span>`;
+    } else if (c.confirmation_status === 'failed') {
+      statusBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-800" title="${escapeHtml(c.confirmation_error || '')}">❌ Error</span>`;
+    }
+
+    const sendBtn = c.confirmation_status === 'sent'
+      ? `<span class="text-[11px] font-semibold text-slate-400"><i class="fa-solid fa-check-double text-emerald-600"></i> Enviado</span>`
+      : `<button onclick="sendSingleCandidateConfirmation(${c.id})" class="px-2.5 py-1 text-[11px] font-bold bg-teal-600 hover:bg-teal-700 text-white rounded transition shadow-xs flex items-center gap-1 ml-auto">
+          <i class="fa-solid fa-paper-plane text-[9px]"></i> Enviar
+        </button>`;
+
+    return `
+      <tr class="hover:bg-slate-50/80 transition" id="conf-row-${c.id}">
+        <td class="py-2.5 px-3">
+          <div class="font-bold text-slate-800">${escapeHtml(c.candidate_name)}</div>
+          <div class="text-[10px] text-slate-500 font-mono">${formatDisplayPhone(c.phone_number)}</div>
+        </td>
+        <td class="py-2.5 px-2">
+          <div class="font-medium text-slate-700">${escapeHtml(c.dateLabel)}</div>
+          <div class="text-[10px] text-blue-600 font-bold">${c.time12h} (${escapeHtml(c.position)})</div>
+        </td>
+        <td class="py-2.5 px-2 text-center" id="conf-status-${c.id}">
+          ${statusBadge}
+        </td>
+        <td class="py-2.5 px-2 text-right" id="conf-action-${c.id}">
+          ${sendBtn}
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+async function startConfirmationProtocol() {
+  if (!confirm('¿Deseas iniciar el Protocolo de Confirmación automático? Se enviará 1 mensaje por persona con pausas de 8 a 18s y variantes humanizadas.')) {
+    return;
+  }
+  try {
+    const res = await fetch('/api/confirmation-protocol/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ delayMinMs: 8000, delayMaxMs: 18000, variantRotation: 'sequential' })
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast('🚀 Protocolo de confirmación en marcha', 'success');
+      updateConfirmationControlsUI({ isRunning: true, isPaused: false });
+    } else {
+      showToast(data.message || 'No se pudo iniciar', 'warning');
+    }
+  } catch (err) {
+    showToast(`Error al iniciar protocolo: ${err.message}`, 'error');
+  }
+}
+
+async function pauseConfirmationProtocol() {
+  try {
+    const res = await fetch('/api/confirmation-protocol/pause', { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+      showToast('Protocolo pausado', 'info');
+      updateConfirmationControlsUI({ isRunning: true, isPaused: true });
+    }
+  } catch (e) {
+    showToast('Error pausando protocolo', 'error');
+  }
+}
+
+async function resumeConfirmationProtocol() {
+  try {
+    const res = await fetch('/api/confirmation-protocol/resume', { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+      showToast('Protocolo reanudado', 'success');
+      updateConfirmationControlsUI({ isRunning: true, isPaused: false });
+    }
+  } catch (e) {
+    showToast('Error reanudando protocolo', 'error');
+  }
+}
+
+async function stopConfirmationProtocol() {
+  if (!confirm('¿Deseas detener el protocolo de confirmación?')) return;
+  try {
+    const res = await fetch('/api/confirmation-protocol/stop', { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+      showToast('Protocolo detenido', 'warning');
+      updateConfirmationControlsUI({ isRunning: false, isPaused: false });
+    }
+  } catch (e) {
+    showToast('Error deteniendo protocolo', 'error');
+  }
+}
+
+window.sendSingleCandidateConfirmation = async function(appointmentId) {
+  try {
+    const btn = event?.currentTarget;
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-[9px]"></i>';
+    }
+    const res = await fetch('/api/confirmation-protocol/send-single', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ appointment_id: appointmentId })
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast('✅ Confirmación enviada con éxito', 'success');
+      loadConfirmationProtocolData();
+    } else {
+      showToast(`Error: ${data.error || data.reason || 'Fallo de envío'}`, 'error');
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-paper-plane text-[9px]"></i> Enviar';
+      }
+    }
+  } catch (err) {
+    showToast(`Error: ${err.message}`, 'error');
+  }
+};
+
+function appendConfirmationLog(entry) {
+  const box = document.getElementById('confConsoleLog');
+  if (!box) return;
+
+  const timeStr = new Date().toLocaleTimeString('es-NI');
+  const div = document.createElement('div');
+  div.className = 'flex items-start space-x-1.5 py-0.5';
+
+  let color = 'text-slate-300';
+  if (entry.type === 'sent') color = 'text-emerald-400 font-bold';
+  else if (entry.type === 'failed') color = 'text-red-400 font-bold';
+  else if (entry.type === 'pause') color = 'text-amber-300';
+  else if (entry.type === 'sending') color = 'text-cyan-300';
+
+  div.innerHTML = `<span class="text-slate-500">[${timeStr}]</span> <span class="${color}">${escapeHtml(entry.message || '')}</span>`;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+
+  const lastTimeEl = document.getElementById('confLastSentTime');
+  if (lastTimeEl && (entry.type === 'sent' || entry.type === 'sending')) {
+    lastTimeEl.textContent = `Último: ${timeStr}`;
+  }
+}
+
+function handleConfirmationSocketEvent(event, data) {
+  if (data.stats) updateConfirmationStatsUI(data.stats);
+  if (event === 'confirmation_sent') {
+    appendConfirmationLog({
+      type: 'sent',
+      message: `✅ Confirmación entregada a ${data.candidate_name} (Var ${data.variantId || 1})`
+    });
+  } else if (event === 'confirmation_failed') {
+    appendConfirmationLog({
+      type: 'failed',
+      message: `❌ Error enviando a ${data.candidate_name}: ${data.error || 'Fallo'}`
+    });
+  }
+  loadConfirmationProtocolData();
+}
+
+function handleProtocolSocketEvent(event, data) {
+  if (event === 'protocol_started') {
+    showToast(`🚀 Protocolo iniciado para ${data.totalPending} candidato(s)`, 'info');
+    updateConfirmationControlsUI({ isRunning: true, isPaused: false });
+    appendConfirmationLog({ type: 'sending', message: `🚀 Iniciando despacho secuencial con blindaje anti-bloqueo...` });
+  } else if (event === 'protocol_log') {
+    appendConfirmationLog(data);
+  } else if (event === 'protocol_progress') {
+    if (data.stats) updateConfirmationStatsUI(data.stats);
+    const elProgressBar = document.getElementById('confProgressBar');
+    const elProgressPercent = document.getElementById('confProgressPercent');
+    if (elProgressBar) elProgressBar.style.width = `${data.percentage}%`;
+    if (elProgressPercent) elProgressPercent.textContent = `${data.percentage}% (${data.current}/${data.total})`;
+  } else if (event === 'protocol_paused') {
+    updateConfirmationControlsUI({ isRunning: true, isPaused: true });
+    appendConfirmationLog({ type: 'pause', message: `⏸️ Protocolo pausado por el usuario.` });
+  } else if (event === 'protocol_resumed') {
+    updateConfirmationControlsUI({ isRunning: true, isPaused: false });
+    appendConfirmationLog({ type: 'sending', message: `▶️ Protocolo reanudado.` });
+  } else if (event === 'protocol_completed') {
+    updateConfirmationControlsUI({ isRunning: false, isPaused: false });
+    showToast(`🏁 Protocolo completado: ${data.sent} enviados`, 'success');
+    appendConfirmationLog({ type: 'sent', message: `🏁 Protocolo finalizado exitosamente. Total enviados: ${data.sent}.` });
+    if (data.stats) updateConfirmationStatsUI(data.stats);
+    loadConfirmationProtocolData();
+  } else if (event === 'protocol_stopped') {
+    updateConfirmationControlsUI({ isRunning: false, isPaused: false });
+    appendConfirmationLog({ type: 'failed', message: `🛑 Protocolo detenido por el usuario.` });
+  }
+}
+

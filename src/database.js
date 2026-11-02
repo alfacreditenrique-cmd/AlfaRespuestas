@@ -25,20 +25,20 @@ if (!fs.existsSync(dbDir)) {
   } catch {}
 }
 
-// En entornos serverless como Vercel donde sólo /tmp es escribible, si la DB no existe en /tmp la copiamos del bundle si está disponible
-if (process.env.VERCEL && !fs.existsSync(CONFIG.DB_PATH)) {
+// Si la base no existe en el directorio de datos, intentar restaurar de datos bundled
+if (!fs.existsSync(CONFIG.DB_PATH)) {
   const bundledDbCandidates = [
     path.join(__dirname, '..', 'data', 'alfa_citas.sqlite'),
     path.join(process.cwd(), 'data', 'alfa_citas.sqlite'),
     path.join(process.cwd(), 'src', '..', 'data', 'alfa_citas.sqlite')
   ];
   for (const bundledDb of bundledDbCandidates) {
-    if (fs.existsSync(bundledDb)) {
+    if (fs.existsSync(bundledDb) && bundledDb !== CONFIG.DB_PATH) {
       try {
         fs.copyFileSync(bundledDb, CONFIG.DB_PATH);
         break;
       } catch (e) {
-        console.warn('⚠️ No se pudo copiar alfa_citas.sqlite empaquetada a /tmp:', e.message);
+        console.warn('⚠️ No se pudo copiar alfa_citas.sqlite base:', e.message);
       }
     }
   }
@@ -189,6 +189,11 @@ try {
 // Migraciones seguras para columnas añadidas
 try { db.exec(`ALTER TABLE appointments ADD COLUMN jid TEXT;`); } catch {}
 try { db.exec(`ALTER TABLE chat_states ADD COLUMN jid TEXT;`); } catch {}
+try { db.exec(`ALTER TABLE appointments ADD COLUMN confirmation_sent_at TEXT;`); } catch {}
+try { db.exec(`ALTER TABLE appointments ADD COLUMN confirmation_status TEXT DEFAULT 'pending';`); } catch {}
+try { db.exec(`ALTER TABLE appointments ADD COLUMN confirmation_variant INTEGER;`); } catch {}
+try { db.exec(`ALTER TABLE appointments ADD COLUMN confirmation_error TEXT;`); } catch {}
+try { db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_appointments_unique_active_slot ON appointments(date, time_slot) WHERE status IN ('confirmada', 'reprogramada');`); } catch {}
 
 // Función no destructiva de recuperación y sincronización de citas y estados desde seed-recovery.json
 function syncFromSeedRecovery(targetDb = db, seedFilePath = null) {
@@ -200,17 +205,30 @@ function syncFromSeedRecovery(targetDb = db, seedFilePath = null) {
     const seed = JSON.parse(fs.readFileSync(seedPath, 'utf8'));
     const now = new Date().toISOString();
 
+    // Auto-migración en targetDb si las columnas aún no existen
+    try { targetDb.exec(`ALTER TABLE appointments ADD COLUMN jid TEXT;`); } catch {}
+    try { targetDb.exec(`ALTER TABLE appointments ADD COLUMN confirmation_sent_at TEXT;`); } catch {}
+    try { targetDb.exec(`ALTER TABLE appointments ADD COLUMN confirmation_status TEXT DEFAULT 'pending';`); } catch {}
+    try { targetDb.exec(`ALTER TABLE appointments ADD COLUMN confirmation_variant INTEGER;`); } catch {}
+    try { targetDb.exec(`ALTER TABLE appointments ADD COLUMN confirmation_error TEXT;`); } catch {}
+    try { targetDb.exec(`ALTER TABLE chat_states ADD COLUMN jid TEXT;`); } catch {}
+
     const checkApt = targetDb.prepare(`
-      SELECT id FROM appointments 
+      SELECT id, jid, status, confirmation_sent_at FROM appointments 
       WHERE (jid IS NOT NULL AND ? IS NOT NULL AND jid = ?)
          OR phone_number = ?
          OR (candidate_name = ? AND date = ? AND time_slot = ?)
       LIMIT 1
     `);
 
+    const checkActiveSlot = targetDb.prepare(`
+      SELECT COUNT(*) as count FROM appointments
+      WHERE date = ? AND time_slot = ? AND status IN ('confirmada', 'reprogramada')
+    `);
+
     const insertApt = targetDb.prepare(`
-      INSERT INTO appointments (candidate_name, phone_number, jid, position, date, time_slot, status, notes, notified_at, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO appointments (candidate_name, phone_number, jid, position, date, time_slot, status, notes, notified_at, confirmation_sent_at, confirmation_status, confirmation_variant, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     let appointmentsAdded = 0;
@@ -224,20 +242,45 @@ function syncFromSeedRecovery(targetDb = db, seedFilePath = null) {
         a.time_slot
       );
       if (!existing) {
-        insertApt.run(
-          a.candidate_name,
-          a.phone_number,
-          a.jid || null,
-          a.position,
-          a.date,
-          a.time_slot,
-          a.status || 'confirmada',
-          a.notes || '',
-          a.notified_at || now,
-          a.created_at || now,
-          a.updated_at || now
-        );
-        appointmentsAdded++;
+        const aptStatus = a.status || 'confirmada';
+        if (aptStatus === 'confirmada' || aptStatus === 'reprogramada') {
+          const slotCheck = checkActiveSlot.get(a.date, a.time_slot);
+          if (slotCheck && slotCheck.count > 0) {
+            console.warn(`[syncFromSeedRecovery] Omitiendo cita duplicada para ${a.candidate_name} en ${a.date} ${a.time_slot}: turno ya ocupado.`);
+            continue;
+          }
+        }
+        try {
+          insertApt.run(
+            a.candidate_name,
+            a.phone_number,
+            a.jid || null,
+            a.position,
+            a.date,
+            a.time_slot,
+            aptStatus,
+            a.notes || '',
+            a.notified_at || now,
+            a.confirmation_sent_at || null,
+            a.confirmation_status || (a.confirmation_sent_at ? 'sent' : 'pending'),
+            a.confirmation_variant || null,
+            a.created_at || now,
+            a.updated_at || now
+          );
+          appointmentsAdded++;
+        } catch (insertErr) {
+          console.warn(`[syncFromSeedRecovery] No se pudo insertar cita ${a.candidate_name}:`, insertErr.message);
+        }
+      } else {
+        try {
+          if (a.jid && !existing.jid) {
+            targetDb.prepare(`UPDATE appointments SET jid = ? WHERE id = ?`).run(a.jid, existing.id);
+          }
+          if (a.confirmation_sent_at && !existing.confirmation_sent_at) {
+            targetDb.prepare(`UPDATE appointments SET confirmation_sent_at = ?, confirmation_status = ?, confirmation_variant = ? WHERE id = ?`)
+              .run(a.confirmation_sent_at, a.confirmation_status || 'sent', a.confirmation_variant || 1, existing.id);
+          }
+        } catch {}
       }
     }
 
@@ -301,28 +344,50 @@ const database = {
       throw new Error(`Horario inválido: ${trimmedTime}. No pertenece a los turnos autorizados de 15 minutos.`);
     }
 
-    if (!recovery && this.isSlotTaken(trimmedDate, trimmedTime)) {
-      throw new Error(`El turno del ${trimmedDate} a las ${trimmedTime} ya se encuentra ocupado.`);
-    }
-
     const normalizedPhone = CONFIG.normalizePhone(phone_number);
-    const now = new Date().toISOString();
-    const stmt = db.prepare(`
-      INSERT INTO appointments (candidate_name, phone_number, jid, position, date, time_slot, status, notes, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, 'confirmada', ?, ?, ?)
-    `);
-    const result = stmt.run(
-      candidate_name.trim(),
-      normalizedPhone,
-      jid || null,
-      position.trim(),
-      trimmedDate,
-      trimmedTime,
-      notes,
-      now,
-      now
-    );
-    const id = Number(result.lastInsertRowid);
+    let inTransaction = false;
+    let id;
+
+    try {
+      db.exec('BEGIN IMMEDIATE');
+      inTransaction = true;
+
+      if (!recovery && this.isSlotTaken(trimmedDate, trimmedTime)) {
+        throw new Error(`El turno del ${trimmedDate} a las ${trimmedTime} ya se encuentra ocupado.`);
+      }
+
+      const now = new Date().toISOString();
+      const stmt = db.prepare(`
+        INSERT INTO appointments (candidate_name, phone_number, jid, position, date, time_slot, status, notes, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, 'confirmada', ?, ?, ?)
+      `);
+      const result = stmt.run(
+        candidate_name.trim(),
+        normalizedPhone,
+        jid || null,
+        position.trim(),
+        trimmedDate,
+        trimmedTime,
+        notes,
+        now,
+        now
+      );
+      id = Number(result.lastInsertRowid);
+      db.exec('COMMIT');
+      inTransaction = false;
+    } catch (err) {
+      if (inTransaction) {
+        try { db.exec('ROLLBACK'); } catch {}
+      }
+      if (
+        err.errcode === 2067 ||
+        err.code === 'SQLITE_CONSTRAINT_UNIQUE' ||
+        (err.message && (err.message.includes('UNIQUE constraint failed') || err.message.includes('SQLITE_CONSTRAINT_UNIQUE')))
+      ) {
+        throw new Error(`El turno del ${trimmedDate} a las ${trimmedTime} ya se encuentra ocupado.`);
+      }
+      throw err;
+    }
     this.logAction('APPOINTMENT_CREATED', id, JSON.stringify({ candidate_name, phone_number: normalizedPhone, jid, position, date: trimmedDate, time_slot: trimmedTime }));
     try { this.createBackup(); } catch {}
     return this.getAppointmentById(id);
@@ -458,19 +523,30 @@ const database = {
       WHERE id = ?
     `);
 
-    stmt.run(
-      candidate_name,
-      phone_number,
-      jid || null,
-      position,
-      date,
-      time_slot,
-      finalStatus,
-      notes,
-      notified_at,
-      updated_at,
-      Number(id)
-    );
+    try {
+      stmt.run(
+        candidate_name,
+        phone_number,
+        jid || null,
+        position,
+        date,
+        time_slot,
+        finalStatus,
+        notes,
+        notified_at,
+        updated_at,
+        Number(id)
+      );
+    } catch (err) {
+      if (
+        err.errcode === 2067 ||
+        err.code === 'SQLITE_CONSTRAINT_UNIQUE' ||
+        (err.message && (err.message.includes('UNIQUE constraint failed') || err.message.includes('SQLITE_CONSTRAINT_UNIQUE')))
+      ) {
+        throw new Error(`El turno del ${date} a las ${time_slot} ya se encuentra ocupado.`);
+      }
+      throw err;
+    }
 
     this.logAction('APPOINTMENT_UPDATED', Number(id), JSON.stringify({
       before: current,
@@ -943,7 +1019,7 @@ const database = {
     try {
       const seedPath = seedFilePath || path.join(__dirname, 'seed-recovery.json');
       const appointments = db.prepare(`
-        SELECT candidate_name, phone_number, jid, position, date, time_slot, status, notes, notified_at, created_at, updated_at
+        SELECT candidate_name, phone_number, jid, position, date, time_slot, status, notes, notified_at, confirmation_sent_at, confirmation_status, confirmation_variant, created_at, updated_at
         FROM appointments
         ORDER BY id ASC
       `).all();
@@ -959,6 +1035,74 @@ const database = {
       return { saved: true, count: appointments.length };
     } catch (e) {
       return { saved: false, error: e.message };
+    }
+  },
+
+  // ==========================================
+  // PROTOCOLO DE CONFIRMACIÓN DE CITAS
+  // ==========================================
+
+  markConfirmationSent(id, variant = 1, notes = '') {
+    const now = new Date().toISOString();
+    db.prepare(`
+      UPDATE appointments 
+      SET confirmation_sent_at = ?,
+          confirmation_status = 'sent',
+          confirmation_variant = ?,
+          confirmation_error = NULL,
+          updated_at = ?
+      WHERE id = ?
+    `).run(now, Number(variant) || 1, now, Number(id));
+
+    this.logAction('CONFIRMATION_PROTOCOL_SENT', id, `Protocolo confirmación enviado (Variante ${variant}). ${notes}`);
+    if (path.basename(CONFIG.DB_PATH) === 'alfa_citas.sqlite') {
+      try { this.saveToSeedRecovery(); } catch {}
+    }
+    return this.getAppointmentById(id);
+  },
+
+  markConfirmationFailed(id, error = '') {
+    const now = new Date().toISOString();
+    db.prepare(`
+      UPDATE appointments 
+      SET confirmation_status = 'failed',
+          confirmation_error = ?,
+          updated_at = ?
+      WHERE id = ?
+    `).run(String(error), now, Number(id));
+
+    this.logAction('CONFIRMATION_PROTOCOL_FAILED', id, `Fallo en protocolo de confirmación: ${error}`);
+    return this.getAppointmentById(id);
+  },
+
+  listCandidatesForConfirmation() {
+    return db.prepare(`
+      SELECT * FROM appointments 
+      WHERE status IN ('confirmada', 'reprogramada')
+      ORDER BY date ASC, time_slot ASC, id ASC
+    `).all();
+  },
+
+  getConfirmationStats() {
+    try {
+      const row = db.prepare(`
+        SELECT 
+          COUNT(*) as total,
+          SUM(CASE WHEN confirmation_sent_at IS NOT NULL OR confirmation_status = 'sent' THEN 1 ELSE 0 END) as sent,
+          SUM(CASE WHEN (confirmation_sent_at IS NULL AND confirmation_status != 'sent' AND confirmation_status != 'failed') OR confirmation_status = 'pending' THEN 1 ELSE 0 END) as pending,
+          SUM(CASE WHEN confirmation_status = 'failed' THEN 1 ELSE 0 END) as failed
+        FROM appointments
+        WHERE status IN ('confirmada', 'reprogramada')
+      `).get();
+
+      return {
+        total: Number(row?.total || 0),
+        sent: Number(row?.sent || 0),
+        pending: Number(row?.pending || 0),
+        failed: Number(row?.failed || 0)
+      };
+    } catch {
+      return { total: 0, sent: 0, pending: 0, failed: 0 };
     }
   },
 
