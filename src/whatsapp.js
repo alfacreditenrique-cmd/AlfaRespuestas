@@ -667,10 +667,16 @@ class WhatsAppService {
       const schedulingKeywords = /\b(agendar|agenda|reagendar|reprogramar|cita|citas|turno|turnos)\b/i;
       const isGeneralInquiryOrScheduling = inquiryKeywords.test(normalizedText) || schedulingKeywords.test(normalizedText);
 
-      // Si el usuario envía comando explícito de reinicio, o si estaba en un estado intermedio
+      // Detección de Intención Negativa ("No puedo", "No voy a ir", "Cancelo", "Ya conseguí empleo")
+      const isNegativeConfirmation =
+        /\b(no\s+(puedo|podre|podr[eé]|voy|voy\s+a\s+ir|ire|ir[eé]|asisto|asistir[eé]|asistire|asistir|estare|estar[eé]|llego)|no\s+me\s+(es|sera|ser[aá])\s+posible|cancelo|cancelar|cancelen|cancelaci[oó]n|ya\s+consegu[ií]\s+(empleo|trabajo|chamba)|ya\s+tengo\s+(empleo|trabajo|chamba)|ya\s+estoy\s+trabajando|no\s+cuenten\s+conmigo)\b/i.test(normalizedText) ||
+        normalizedText === 'no' ||
+        /^no[\s.,!]+$/i.test(normalizedText);
+
+      // Si el usuario envía comando explícito de reinicio, o intención negativa de cancelación, o si estaba en un estado intermedio
       // (AWAITING_DATE, AWAITING_NAME, AWAITING_PHONE) y envía una intención de consulta o agendamiento,
-      // se reinicia el estado para permitirle volver al menú principal o reprogramar.
-      if (isExplicitReset || (state && state.step !== 'AWAITING_POSITION' && isGeneralInquiryOrScheduling)) {
+      // se reinicia el estado para permitirle volver al menú principal, confirmar o cancelar.
+      if (isExplicitReset || isNegativeConfirmation || (state && state.step !== 'AWAITING_POSITION' && isGeneralInquiryOrScheduling)) {
         database.clearChatState(chatId);
         state = null;
       }
@@ -683,34 +689,99 @@ class WhatsAppService {
           rescheduleWords.includes(normalizedText) ||
           /\b(reprogramar|reagendar|cambiar\s+cita|nueva\s+cita|otra\s+cita|reiniciar|agendar|agenda)\b/i.test(normalizedText);
 
-        // Si ya tiene cita activa y escribe una consulta regular (no reprogramación explícita)
-        if (existingAppointment && !isRescheduleIntent) {
+        // Si ya tiene cita activa
+        if (existingAppointment) {
+          // 1. Si desea reprogramar su cita existente
+          if (isRescheduleIntent) {
+            database.saveChatState(chatId, {
+              step: 'AWAITING_POSITION',
+              candidate_name: existingAppointment.candidate_name,
+              jid: replyJid
+            });
+
+            const notice =
+              `🔄 *REPROGRAMACIÓN DE ENTREVISTA - ${CONFIG.COMPANY_NAME}*\n\n` +
+              `Estimado(a) *${existingAppointment.candidate_name}*, procederemos a reprogramar su cita.\n` +
+              `Su turno anterior se liberará automáticamente al confirmar la nueva fecha.\n\n` +
+              this.getPositionsPrompt();
+
+            await this.reply(replyJid, notice);
+            return;
+          }
+
+          // 2. Detección de Intención Negativa ("No puedo", "No voy a ir", "Cancelo", "Ya conseguí empleo")
+          if (isNegativeConfirmation) {
+            console.log(`[WhatsApp] 🛑 Postulante ${existingAppointment.candidate_name} indicó que no asistirá: "${text}". Liberando turno #${existingAppointment.id}.`);
+            database.markConfirmationAttendance(existingAppointment.id, false, `Cancelado por el postulante vía WhatsApp: "${text.slice(0, 100)}"`);
+
+            this.emitEvent('confirmation_attendance_updated', {
+              id: existingAppointment.id,
+              candidate_name: existingAppointment.candidate_name,
+              status: 'cancelada',
+              confirmation_status: 'no_asistira'
+            });
+
+            const cancelAcknowledgeMsg =
+              `Entendido, *${existingAppointment.candidate_name}*. Hemos registrado que no te será posible asistir y liberamos tu turno de entrevista para la plaza de *${existingAppointment.position}*.\n\n` +
+              `Agradecemos mucho que nos hayas avisado con anticipación para ceder el espacio a otro postulante. Te deseamos el mayor de los éxitos en tus metas laborales y personales.`;
+
+            await this.reply(replyJid, cancelAcknowledgeMsg);
+            return;
+          }
+
+          // 3. Detección de Intención Afirmativa ("Sí", "Confirmo", "Asistiré", "Listo", "De acuerdo", "Ahí estaré")
+          const isAffirmativeConfirmation =
+            !isNegativeConfirmation && (
+              /\b(si|s[ií]|sip|sii|confirmo|confirmado|confirmada|confirmar|asistir[eé]|asistire|asisto|asistencia|listo|lista|de\s+acuerdo|ah[ií]\s+estar[eé]|ahi\s+estare|all[aá]\s+estar[eé]|alla\s+estare|estare\s+presente|estar[eé]\s+presente|presente|seguro|claro|por\s+supuesto|cuenta\s+conmigo|cuenten\s+conmigo|si\s+voy|si\s+puedo|afirmativo)\b/i.test(normalizedText) ||
+              /^(si|s[ií]|ok|okay|dale|listo|confirmo)[\s.,!]*$/i.test(normalizedText)
+            );
+
+          if (isAffirmativeConfirmation) {
+            console.log(`[WhatsApp] ✅ Postulante ${existingAppointment.candidate_name} confirmó asistencia: "${text}". Actualizando cita #${existingAppointment.id}.`);
+            database.markConfirmationAttendance(existingAppointment.id, true, `Asistencia confirmada por el postulante vía WhatsApp: "${text.slice(0, 100)}"`);
+
+            this.emitEvent('confirmation_attendance_updated', {
+              id: existingAppointment.id,
+              candidate_name: existingAppointment.candidate_name,
+              status: 'confirmada',
+              confirmation_status: 'asistencia_confirmada'
+            });
+
+            const dateLabel = scheduler.getDateLabel(existingAppointment.date);
+            const time12h = scheduler.formatTime12h(existingAppointment.time_slot);
+            const location = CONFIG.LOCATION || 'Costado Suroeste Parque Central 1/2 cuadra al Oeste, Sébaco';
+
+            const confirmAcknowledgeMsg =
+              `¡Excelente, *${existingAppointment.candidate_name}*! 🎉 Tu asistencia a la entrevista presencial ha quedado formalmente confirmada en nuestro sistema.\n\n` +
+              `📋 *Resumen de tu Turno Confirmado:*\n` +
+              `💼 *Plaza:* ${existingAppointment.position}\n` +
+              `📅 *Fecha:* ${dateLabel}\n` +
+              `⏰ *Hora:* ${time12h} (${existingAppointment.time_slot})\n` +
+              `📍 *Lugar:* Sucursal AlfaCredit Sébaco (${location}).\n\n` +
+              `📌 *Recomendaciones para el día de tu cita:*\n` +
+              `• Presentarse con 10 a 15 minutos de anticipación.\n` +
+              `• Portar cédula de identidad original y currículum impreso.\n\n` +
+              `¡Te deseamos el mayor de los éxitos en tu entrevista!`;
+
+            await this.reply(replyJid, confirmAcknowledgeMsg);
+            return;
+          }
+
+          // 4. Si ya tiene cita activa y escribe otra consulta regular (no confirmación ni reprogramación)
           const ticket = scheduler.generateTicket(existingAppointment);
+          const isAlreadyConfirmed = existingAppointment.confirmation_status === 'asistencia_confirmada';
+          const statusNotice = isAlreadyConfirmed
+            ? `✅ *Estado:* Tu asistencia ya está confirmada en nuestro sistema.\n\n`
+            : '';
+
           const reply = 
             `👋 Hola *${existingAppointment.candidate_name}*,\n\n` +
+            statusNotice +
             `Ya tienes una entrevista agendada en *${CONFIG.COMPANY_NAME}*:\n\n` +
             ticket + `\n\n` +
             `ℹ️ *¿Deseas reprogramar tu cita?* Responde con la palabra *"REPROGRAMAR"* o *"REINICIAR"* para cambiar de fecha u horario.`;
           
           await this.reply(replyJid, reply);
-          return;
-        }
-
-        // Si desea reprogramar su cita existente
-        if (existingAppointment && isRescheduleIntent) {
-          database.saveChatState(chatId, {
-            step: 'AWAITING_POSITION',
-            candidate_name: existingAppointment.candidate_name,
-            jid: replyJid
-          });
-
-          const notice =
-            `🔄 *REPROGRAMACIÓN DE ENTREVISTA - ${CONFIG.COMPANY_NAME}*\n\n` +
-            `Estimado(a) *${existingAppointment.candidate_name}*, procederemos a reprogramar su cita.\n` +
-            `Su turno anterior se liberará automáticamente al confirmar la nueva fecha.\n\n` +
-            this.getPositionsPrompt();
-
-          await this.reply(replyJid, notice);
           return;
         }
 

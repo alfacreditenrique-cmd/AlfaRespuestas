@@ -1076,6 +1076,38 @@ const database = {
     return this.getAppointmentById(id);
   },
 
+  markConfirmationAttendance(id, attended = true, notes = '') {
+    const current = this.getAppointmentById(id);
+    if (!current) throw new Error(`Cita con ID ${id} no encontrada`);
+
+    const now = new Date().toISOString();
+    if (attended) {
+      db.prepare(`
+        UPDATE appointments 
+        SET confirmation_status = 'asistencia_confirmada',
+            updated_at = ?
+        WHERE id = ?
+      `).run(now, Number(id));
+
+      this.logAction('CONFIRMATION_ATTENDANCE_CONFIRMED', Number(id), notes || 'Postulante confirmó asistencia a entrevista presencial');
+    } else {
+      this.cancelAppointment(id, notes || 'Postulante indicó que no asistirá a la entrevista');
+      db.prepare(`
+        UPDATE appointments 
+        SET confirmation_status = 'no_asistira',
+            updated_at = ?
+        WHERE id = ?
+      `).run(now, Number(id));
+
+      this.logAction('CONFIRMATION_ATTENDANCE_DECLINED', Number(id), notes || 'Postulante indicó que no asistirá');
+    }
+
+    if (path.basename(CONFIG.DB_PATH) === 'alfa_citas.sqlite') {
+      try { this.saveToSeedRecovery(); } catch {}
+    }
+    return this.getAppointmentById(id);
+  },
+
   listCandidatesForConfirmation() {
     return db.prepare(`
       SELECT * FROM appointments 
@@ -1089,9 +1121,10 @@ const database = {
       const row = db.prepare(`
         SELECT 
           COUNT(*) as total,
-          SUM(CASE WHEN confirmation_status != 'failed' AND (confirmation_sent_at IS NOT NULL OR confirmation_status = 'sent') THEN 1 ELSE 0 END) as sent,
+          SUM(CASE WHEN confirmation_status != 'failed' AND (confirmation_sent_at IS NOT NULL OR confirmation_status IN ('sent', 'asistencia_confirmada')) THEN 1 ELSE 0 END) as sent,
           SUM(CASE WHEN confirmation_status = 'failed' THEN 1 ELSE 0 END) as failed,
-          SUM(CASE WHEN (confirmation_status = 'pending' OR (confirmation_status != 'failed' AND confirmation_status != 'sent' AND confirmation_sent_at IS NULL)) THEN 1 ELSE 0 END) as pending
+          SUM(CASE WHEN (confirmation_status = 'pending' OR (confirmation_status != 'failed' AND confirmation_status NOT IN ('sent', 'asistencia_confirmada') AND confirmation_sent_at IS NULL)) THEN 1 ELSE 0 END) as pending,
+          SUM(CASE WHEN confirmation_status = 'asistencia_confirmada' THEN 1 ELSE 0 END) as confirmed_attendance
         FROM appointments
         WHERE status IN ('confirmada', 'reprogramada')
       `).get();
@@ -1100,10 +1133,11 @@ const database = {
         total: Number(row?.total || 0),
         sent: Number(row?.sent || 0),
         pending: Number(row?.pending || 0),
-        failed: Number(row?.failed || 0)
+        failed: Number(row?.failed || 0),
+        confirmed_attendance: Number(row?.confirmed_attendance || 0)
       };
     } catch {
-      return { total: 0, sent: 0, pending: 0, failed: 0 };
+      return { total: 0, sent: 0, pending: 0, failed: 0, confirmed_attendance: 0 };
     }
   },
 

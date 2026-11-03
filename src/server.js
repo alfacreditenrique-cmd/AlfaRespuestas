@@ -772,136 +772,353 @@ app.get('/api/backup/download', (req, res) => {
   }
 });
 
-// 15. EXPORTACIÓN PROFESIONAL A EXCEL (.xlsx)
+// 15. EXPORTACIÓN PROFESIONAL A EXCEL (.xlsx) - LISTA DE ASISTENCIA Y CONTROL POR FECHA
 app.get('/api/export/excel', async (req, res) => {
   try {
-    const appointments = database.listAppointments();
+    const allAppointments = database.listAppointments();
 
     const workbook = new ExcelJS.Workbook();
-    workbook.creator = 'AlfaCredit S.A. - Sistema AlfaRespuestas';
+    workbook.creator = 'AlfaCredit S.A. - Talento Humano';
+    workbook.lastModifiedBy = 'AlfaCredit S.A. - Sistema AlfaRespuestas';
     workbook.created = new Date();
+    workbook.modified = new Date();
 
-    const worksheet = workbook.addWorksheet('Citas Agendadas', {
-      views: [{ showGridLines: true }]
-    });
+    // Obtener lista completa de fechas a incluir
+    const configuredDates = database.listDates();
+    const dateMap = new Map();
+    for (const d of configuredDates) {
+      dateMap.set(d.id, d.label);
+    }
+    for (const apt of allAppointments) {
+      if (!dateMap.has(apt.date)) {
+        dateMap.set(apt.date, scheduler.getDateLabel(apt.date) || apt.date);
+      }
+    }
 
-    // Título Principal
-    worksheet.mergeCells('A1:H1');
-    const titleCell = worksheet.getCell('A1');
-    titleCell.value = 'ALFACREDIT S.A. - LISTADO OFICIAL DE ENTREVISTAS DE TRABAJO';
-    titleCell.font = { name: 'Arial', size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
-    titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E3A8A' } }; // Azul Corporativo
-    titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
-    worksheet.getRow(1).height = 36;
+    const sortedDateIds = Array.from(dateMap.keys()).sort();
 
-    // Subtítulo con fecha de generación
-    const activeDatesLabel = database.getActiveDates().map(d => d.label).join(' | ');
-    worksheet.mergeCells('A2:H2');
-    const subCell = worksheet.getCell('A2');
-    subCell.value = `Fechas: ${activeDatesLabel} | Generado el: ${new Date().toLocaleString('es-GT')}`;
-    subCell.font = { name: 'Arial', size: 10, italic: true, color: { argb: 'FF475569' } };
-    subCell.alignment = { vertical: 'middle', horizontal: 'center' };
-    worksheet.getRow(2).height = 20;
+    // Paleta Corporativa AlfaCredit
+    const COLORS = {
+      NAVY_PRIMARY: 'FF1E3A8A',     // Azul Marino Corporativo
+      NAVY_DARK: 'FF0F172A',        // Slate / Navy Oscuro para encabezados de tabla
+      BLUE_ACCENT: 'FF2563EB',      // Azul Vibrante para subtítulos
+      BG_LIGHT: 'FFF8FAFC',         // Fondo alterno suave
+      BG_WHITE: 'FFFFFFFF',         // Blanco
+      BORDER_THIN: 'FFCBD5E1',      // Borde sutil slate
+      BORDER_MEDIUM: 'FF94A3B8',    // Borde medio para divisiones y firma
+      TEXT_DARK: 'FF0F172A',        // Texto principal
+      TEXT_MUTED: 'FF475569',       // Texto secundario
+      CONFIRMED_TEXT: 'FF166534',   // Verde oscuro
+      CONFIRMED_BG: 'FFDCFCE7',     // Verde pastel
+      PENDING_TEXT: 'FF475569',     // Slate
+      PENDING_BG: 'FFF1F5F9',       // Slate claro
+      CANCELLED_TEXT: 'FF991B1B',   // Rojo oscuro
+      CANCELLED_BG: 'FFFEE2E2',     // Rojo pastel
+      ERROR_TEXT: 'FF854D0E',       // Ámbar oscuro
+      ERROR_BG: 'FFFEF9C3'          // Ámbar pastel
+    };
 
-    worksheet.addRow([]); // Fila vacía
+    // Helper para nombre de hoja válido y descriptivo
+    function formatSheetTabName(dateId, dateLabel) {
+      const parts = String(dateId).split('-');
+      const day = parts[2] || '01';
+      const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+      const monthIdx = parseInt(parts[1], 10) - 1;
+      const monthStr = monthNames[monthIdx] || 'Nov';
+      const year = parts[0] || '2025';
 
-    // Encabezados de Columnas
-    const headers = [
-      'ID',
-      'Postulante (Nombre)',
-      'Teléfono / WhatsApp',
-      'Plaza a la que Aplica',
-      'Fecha',
-      'Hora (24h)',
-      'Hora (12h)',
-      'Estado',
-      'Notas / Observaciones'
-    ];
+      let dayOfWeek = '';
+      const norm = (dateLabel || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      if (norm.includes('miercoles')) dayOfWeek = 'Miércoles';
+      else if (norm.includes('jueves')) dayOfWeek = 'Jueves';
+      else if (norm.includes('viernes')) dayOfWeek = 'Viernes';
+      else if (norm.includes('martes')) dayOfWeek = 'Martes';
+      else if (norm.includes('lunes')) dayOfWeek = 'Lunes';
+      else if (norm.includes('sabado')) dayOfWeek = 'Sábado';
+      else if (norm.includes('domingo')) dayOfWeek = 'Domingo';
 
-    const headerRow = worksheet.addRow(headers);
-    headerRow.height = 26;
-    headerRow.eachCell((cell) => {
-      cell.font = { name: 'Arial', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2563EB' } };
-      cell.alignment = { vertical: 'middle', horizontal: 'center' };
-      cell.border = {
-        top: { style: 'thin', color: { argb: 'FFCBD5E1' } },
-        left: { style: 'thin', color: { argb: 'FFCBD5E1' } },
-        bottom: { style: 'medium', color: { argb: 'FF1E3A8A' } },
-        right: { style: 'thin', color: { argb: 'FFCBD5E1' } }
-      };
-    });
+      let title = `${day}-${monthStr}-${year}`;
+      if (dayOfWeek) title += ` (${dayOfWeek})`;
+      return title.replace(/[:\\/?*\[\]]/g, '').slice(0, 31);
+    }
 
-    // Agregar filas de datos
-    appointments.forEach((apt, index) => {
-      const dateLabel = scheduler.getDateLabel(apt.date);
-      const time12h = scheduler.formatTime12h(apt.time_slot);
+    const dateListToProcess = sortedDateIds.length > 0 ? sortedDateIds : ['2025-11-04'];
 
-      const resolvedPhone = typeof database.resolvePhoneNumber === 'function'
-        ? database.resolvePhoneNumber(apt.phone_number, apt.jid)
-        : apt.phone_number;
+    for (const dateId of dateListToProcess) {
+      const dateLabel = dateMap.get(dateId) || scheduler.getDateLabel(dateId) || dateId;
+      const sheetName = formatSheetTabName(dateId, dateLabel);
 
-      const row = worksheet.addRow([
-        apt.id,
-        apt.candidate_name,
-        resolvedPhone,
-        apt.position,
-        dateLabel,
-        apt.time_slot,
-        time12h,
-        apt.status.toUpperCase(),
-        apt.notes || ''
-      ]);
-
-      row.height = 22;
-      const isEven = index % 2 === 0;
-
-      row.eachCell((cell, colNumber) => {
-        cell.font = { name: 'Arial', size: 10 };
-        cell.alignment = { vertical: 'middle', horizontal: colNumber === 1 || colNumber >= 5 ? 'center' : 'left' };
-        cell.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: isEven ? 'FFF8FAFC' : 'FFFFFFFF' }
-        };
-        cell.border = {
-          top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
-          bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
-          left: { style: 'thin', color: { argb: 'FFE2E8F0' } },
-          right: { style: 'thin', color: { argb: 'FFE2E8F0' } }
-        };
-
-        // Resaltar estado
-        if (colNumber === 8) {
-          if (apt.status === 'confirmada') {
-            cell.font = { bold: true, color: { argb: 'FF166534' } }; // Verde
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDCFCE7' } };
-          } else if (apt.status === 'reprogramada') {
-            cell.font = { bold: true, color: { argb: 'FF854D0E' } }; // Ámbar
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF9C3' } };
-          } else if (apt.status === 'cancelada') {
-            cell.font = { bold: true, color: { argb: 'FF991B1B' } }; // Rojo
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEE2E2' } };
-          }
-        }
+      const worksheet = workbook.addWorksheet(sheetName, {
+        pageSetup: {
+          orientation: 'landscape',
+          paperSize: 9, // A4
+          fitToPage: true,
+          fitToWidth: 1,
+          fitToHeight: 0,
+          margins: { left: 0.4, right: 0.4, top: 0.5, bottom: 0.5, header: 0.3, footer: 0.3 }
+        },
+        views: [{ showGridLines: true }]
       });
-    });
 
-    // Ajustar anchos automáticos
-    worksheet.columns = [
-      { width: 8 },  // ID
-      { width: 30 }, // Nombre
-      { width: 20 }, // Teléfono
-      { width: 28 }, // Plaza
-      { width: 28 }, // Fecha
-      { width: 14 }, // Hora 24h
-      { width: 16 }, // Hora 12h
-      { width: 18 }, // Estado
-      { width: 36 }  // Notas
-    ];
+      // Filtrar y ordenar candidatos activos de esta fecha (cronológicamente por hora de llegada)
+      const dateApts = allAppointments
+        .filter(a => a.date === dateId && a.status !== 'cancelada')
+        .sort((a, b) => (a.time_slot || '').localeCompare(b.time_slot || '') || (a.candidate_name || '').localeCompare(b.candidate_name || ''));
+
+      // 1. BANNER PRINCIPAL: TÍTULO CORPORATIVO
+      worksheet.mergeCells('A1:H1');
+      const titleCell = worksheet.getCell('A1');
+      titleCell.value = 'ALFACREDIT S.A. - LISTA DE ASISTENCIA Y CONTROL DE ENTREVISTAS';
+      titleCell.font = { name: 'Arial', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
+      titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLORS.NAVY_PRIMARY } };
+      titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
+      worksheet.getRow(1).height = 32;
+
+      // 2. SUBTÍTULO CON DATOS DE FECHA Y SEDE
+      worksheet.mergeCells('A2:H2');
+      const subCell = worksheet.getCell('A2');
+      subCell.value = `Sede: Sucursal Sébaco (Costado Suroeste Parque Central 1/2 c. al Oeste) | Fecha Oficial: ${dateLabel.toUpperCase()} | Horario: 08:00 AM - 05:00 PM`;
+      subCell.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
+      subCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLORS.BLUE_ACCENT } };
+      subCell.alignment = { vertical: 'middle', horizontal: 'center' };
+      worksheet.getRow(2).height = 22;
+
+      // 3. INSTRUCCIONES DE RECEPCIÓN
+      worksheet.mergeCells('A3:H3');
+      const instCell = worksheet.getCell('A3');
+      instCell.value = 'Instrucciones: Solicitar cédula de identidad física, registrar la hora real de llegada y recabar la firma manuscrita de cada postulante en su fila correspondiente.';
+      instCell.font = { name: 'Arial', size: 9, italic: true, color: { argb: COLORS.TEXT_MUTED } };
+      instCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } };
+      instCell.alignment = { vertical: 'middle', horizontal: 'center' };
+      worksheet.getRow(3).height = 18;
+
+      worksheet.addRow([]); // Fila 4 vacía
+      worksheet.getRow(4).height = 8;
+
+      // 4. ENCABEZADOS DE LA TABLA DE ASISTENCIA
+      const headers = [
+        'N°',
+        'Hora de Cita',
+        'Nombre Completo del Postulante',
+        'Cargo / Plaza',
+        'Teléfono / WhatsApp',
+        'Estado de Confirmación',
+        'Firma del Postulante',
+        'Observaciones / Hora Real de Recepción'
+      ];
+
+      const headerRow = worksheet.addRow(headers);
+      headerRow.height = 28;
+      headerRow.eachCell((cell, colNumber) => {
+        cell.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLORS.NAVY_DARK } };
+        cell.alignment = { vertical: 'middle', horizontal: colNumber === 3 || colNumber === 4 ? 'left' : 'center', wrapText: true };
+        cell.border = {
+          top: { style: 'medium', color: { argb: COLORS.NAVY_DARK } },
+          left: { style: 'thin', color: { argb: COLORS.BORDER_THIN } },
+          bottom: { style: 'medium', color: { argb: COLORS.NAVY_DARK } },
+          right: { style: 'thin', color: { argb: COLORS.BORDER_THIN } }
+        };
+      });
+
+      // 5. FILAS DE CANDIDATOS CITADOS (ORDEN CRONOLÓGICO)
+      let countConfirmed = 0;
+      let countPending = 0;
+
+      if (dateApts.length === 0) {
+        const emptyRow = worksheet.addRow(['-', '-', 'No hay entrevistas programadas para esta fecha', '-', '-', '-', '-', '-']);
+        emptyRow.height = 36;
+        emptyRow.eachCell(cell => {
+          cell.font = { name: 'Arial', size: 10, italic: true, color: { argb: COLORS.TEXT_MUTED } };
+          cell.alignment = { vertical: 'middle', horizontal: 'center' };
+          cell.border = {
+            top: { style: 'thin', color: { argb: COLORS.BORDER_THIN } },
+            bottom: { style: 'thin', color: { argb: COLORS.BORDER_THIN } },
+            left: { style: 'thin', color: { argb: COLORS.BORDER_THIN } },
+            right: { style: 'thin', color: { argb: COLORS.BORDER_THIN } }
+          };
+        });
+      } else {
+        dateApts.forEach((apt, idx) => {
+          const itemNum = idx + 1;
+          const time12h = scheduler.formatTime12h(apt.time_slot);
+          const timeDisplay = `${time12h} (${apt.time_slot})`;
+
+          const resolvedPhone = typeof database.resolvePhoneNumber === 'function'
+            ? database.resolvePhoneNumber(apt.phone_number, apt.jid)
+            : apt.phone_number;
+
+          // Etiqueta legible de confirmación
+          let confStatusLabel = 'Pendiente';
+          let confColor = { fg: COLORS.PENDING_TEXT, bg: COLORS.PENDING_BG };
+
+          if (apt.confirmation_status === 'asistencia_confirmada') {
+            confStatusLabel = 'Confirmó Asistencia';
+            confColor = { fg: COLORS.CONFIRMED_TEXT, bg: COLORS.CONFIRMED_BG };
+            countConfirmed++;
+          } else if (apt.confirmation_status === 'sent') {
+            confStatusLabel = 'Mensaje Enviado';
+            confColor = { fg: 'FF1E40AF', bg: 'FFDBEAFE' };
+            countPending++;
+          } else if (apt.confirmation_status === 'failed') {
+            confStatusLabel = 'Error en Envío';
+            confColor = { fg: COLORS.ERROR_TEXT, bg: COLORS.ERROR_BG };
+            countPending++;
+          } else {
+            countPending++;
+          }
+
+          const row = worksheet.addRow([
+            itemNum,
+            timeDisplay,
+            apt.candidate_name,
+            apt.position,
+            resolvedPhone,
+            confStatusLabel,
+            '', // Espacio amplio para firma manuscrita del postulante
+            apt.notes || '' // Espacio para observaciones / hora real
+          ]);
+
+          // Altura amplia (40pt) para permitir firma manuscrita cómoda y clara
+          row.height = 40;
+          const isEven = idx % 2 === 0;
+
+          row.eachCell((cell, colNumber) => {
+            cell.font = { name: 'Arial', size: 9.5, color: { argb: COLORS.TEXT_DARK } };
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: isEven ? COLORS.BG_WHITE : COLORS.BG_LIGHT }
+            };
+            cell.border = {
+              top: { style: 'thin', color: { argb: COLORS.BORDER_THIN } },
+              bottom: { style: 'thin', color: { argb: COLORS.BORDER_THIN } },
+              left: { style: 'thin', color: { argb: COLORS.BORDER_THIN } },
+              right: { style: 'thin', color: { argb: COLORS.BORDER_THIN } }
+            };
+
+            // Alineaciones específicas
+            if (colNumber === 1) { // N°
+              cell.alignment = { vertical: 'middle', horizontal: 'center' };
+              cell.font = { name: 'Arial', size: 10, bold: true, color: { argb: COLORS.NAVY_PRIMARY } };
+            } else if (colNumber === 2) { // Hora
+              cell.alignment = { vertical: 'middle', horizontal: 'center' };
+              cell.font = { name: 'Arial', size: 9.5, bold: true, color: { argb: COLORS.TEXT_DARK } };
+            } else if (colNumber === 3) { // Nombre
+              cell.alignment = { vertical: 'middle', horizontal: 'left' };
+              cell.font = { name: 'Arial', size: 10, bold: true, color: { argb: COLORS.TEXT_DARK } };
+            } else if (colNumber === 4) { // Cargo
+              cell.alignment = { vertical: 'middle', horizontal: 'left' };
+            } else if (colNumber === 5) { // Teléfono
+              cell.alignment = { vertical: 'middle', horizontal: 'center' };
+            } else if (colNumber === 6) { // Estado Confirmación
+              cell.alignment = { vertical: 'middle', horizontal: 'center' };
+              cell.font = { name: 'Arial', size: 9, bold: true, color: { argb: confColor.fg } };
+              cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: confColor.bg } };
+            } else if (colNumber === 7) { // Espacio para Firma Manuscrita
+              cell.alignment = { vertical: 'bottom', horizontal: 'center' };
+              cell.border = {
+                ...cell.border,
+                bottom: { style: 'medium', color: { argb: COLORS.BORDER_MEDIUM } }
+              };
+            } else if (colNumber === 8) { // Observaciones
+              cell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
+            }
+          });
+        });
+      }
+
+      // 6. RESUMEN Y PIE DE CONTROL AL FINAL DE CADA HOJA
+      worksheet.addRow([]); // Separador
+
+      // Cuadro de Resumen de Convocatoria
+      const summaryRow1 = worksheet.addRow(['', '', 'RESUMEN DE CONVOCATORIA DE ESTA FECHA:', '', '', '', '', '']);
+      summaryRow1.height = 20;
+      worksheet.mergeCells(`C${summaryRow1.number}:E${summaryRow1.number}`);
+      const s1Cell = worksheet.getCell(`C${summaryRow1.number}`);
+      s1Cell.font = { name: 'Arial', size: 10, bold: true, color: { argb: COLORS.NAVY_PRIMARY } };
+
+      const totalConvocados = dateApts.length;
+      const summaryRow2 = worksheet.addRow([
+        '', '',
+        `• Total de Postulantes Citados: ${totalConvocados}  |  • Asistencias Confirmadas: ${countConfirmed}  |  • Pendientes de Confirmación: ${countPending}`,
+        '', '', '', '', ''
+      ]);
+      summaryRow2.height = 20;
+      worksheet.mergeCells(`C${summaryRow2.number}:G${summaryRow2.number}`);
+      const s2Cell = worksheet.getCell(`C${summaryRow2.number}`);
+      s2Cell.font = { name: 'Arial', size: 9.5, italic: true, color: { argb: COLORS.TEXT_MUTED } };
+
+      worksheet.addRow([]); // Fila vacía
+
+      // Bloques de Firmas de los Evaluadores / Recepción
+      const sigRow1 = worksheet.addRow([
+        '',
+        '________________________________________',
+        '',
+        '',
+        '',
+        '________________________________________',
+        '',
+        ''
+      ]);
+      sigRow1.height = 24;
+      worksheet.mergeCells(`B${sigRow1.number}:D${sigRow1.number}`);
+      worksheet.mergeCells(`F${sigRow1.number}:H${sigRow1.number}`);
+      sigRow1.getCell('B').alignment = { horizontal: 'center', vertical: 'bottom' };
+      sigRow1.getCell('F').alignment = { horizontal: 'center', vertical: 'bottom' };
+
+      const sigRow2 = worksheet.addRow([
+        '',
+        'Responsable de Recepción y Control',
+        '',
+        '',
+        '',
+        'Comité de Selección y Talento Humano',
+        '',
+        ''
+      ]);
+      sigRow2.height = 18;
+      worksheet.mergeCells(`B${sigRow2.number}:D${sigRow2.number}`);
+      worksheet.mergeCells(`F${sigRow2.number}:H${sigRow2.number}`);
+      sigRow2.getCell('B').font = { name: 'Arial', size: 9, bold: true, color: { argb: COLORS.TEXT_DARK } };
+      sigRow2.getCell('F').font = { name: 'Arial', size: 9, bold: true, color: { argb: COLORS.TEXT_DARK } };
+      sigRow2.getCell('B').alignment = { horizontal: 'center', vertical: 'top' };
+      sigRow2.getCell('F').alignment = { horizontal: 'center', vertical: 'top' };
+
+      const sigRow3 = worksheet.addRow([
+        '',
+        'AlfaCredit S.A. - Sucursal Sébaco',
+        '',
+        '',
+        '',
+        'AlfaCredit S.A. - Sébaco',
+        '',
+        ''
+      ]);
+      sigRow3.height = 16;
+      worksheet.mergeCells(`B${sigRow3.number}:D${sigRow3.number}`);
+      worksheet.mergeCells(`F${sigRow3.number}:H${sigRow3.number}`);
+      sigRow3.getCell('B').font = { name: 'Arial', size: 8.5, italic: true, color: { argb: COLORS.TEXT_MUTED } };
+      sigRow3.getCell('F').font = { name: 'Arial', size: 8.5, italic: true, color: { argb: COLORS.TEXT_MUTED } };
+      sigRow3.getCell('B').alignment = { horizontal: 'center', vertical: 'top' };
+      sigRow3.getCell('F').alignment = { horizontal: 'center', vertical: 'top' };
+
+      // 7. ANCHO DE COLUMNAS PROFESIONAL Y AMPLIO PARA IMPRESIÓN DIRECTA
+      worksheet.columns = [
+        { width: 6 },  // N°
+        { width: 20 }, // Hora de Cita (ej: 08:30 AM (08:30))
+        { width: 34 }, // Nombre Completo del Postulante
+        { width: 28 }, // Cargo / Plaza Postulada
+        { width: 18 }, // Teléfono / WhatsApp
+        { width: 24 }, // Estado de Confirmación
+        { width: 36 }, // Firma del Postulante (Espacio amplio para firma manuscrita)
+        { width: 30 }  // Observaciones / Hora Real de Recepción
+      ];
+    }
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', `attachment; filename=AlfaCredit_Citas_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    res.setHeader('Content-Disposition', `attachment; filename=AlfaCredit_Lista_Asistencia_Entrevistas_${new Date().toISOString().slice(0, 10)}.xlsx`);
 
     await workbook.xlsx.write(res);
     res.end();

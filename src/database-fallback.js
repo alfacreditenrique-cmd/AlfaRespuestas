@@ -621,6 +621,36 @@ class FallbackDatabaseSync {
       };
     }
 
+    // 9c2. Marcar asistencia confirmada
+    if (s.includes("UPDATE appointments SET confirmation_status = 'asistencia_confirmada'")) {
+      return {
+        run: (updatedAt, id) => {
+          const found = self.appointments.find(a => a.id === Number(id));
+          if (found) {
+            found.confirmation_status = 'asistencia_confirmada';
+            found.updated_at = updatedAt;
+            return { changes: 1 };
+          }
+          return { changes: 0 };
+        }
+      };
+    }
+
+    // 9c3. Marcar rechazo de asistencia
+    if (s.includes("UPDATE appointments SET confirmation_status = 'no_asistira'")) {
+      return {
+        run: (updatedAt, id) => {
+          const found = self.appointments.find(a => a.id === Number(id));
+          if (found) {
+            found.confirmation_status = 'no_asistira';
+            found.updated_at = updatedAt;
+            return { changes: 1 };
+          }
+          return { changes: 0 };
+        }
+      };
+    }
+
     // 9d. Listar candidatos para confirmación
     if (s.includes('SELECT * FROM appointments WHERE status IN (\'confirmada\', \'reprogramada\') ORDER BY date ASC, time_slot ASC, id ASC')) {
       return {
@@ -633,19 +663,20 @@ class FallbackDatabaseSync {
     }
 
     // 9e. Estadísticas de confirmación
-    if (s.includes('SUM(CASE WHEN confirmation_sent_at IS NOT NULL OR confirmation_status = \'sent\'')) {
+    if (s.includes('SUM(CASE WHEN') && s.includes('confirmation_sent_at')) {
       return {
         get: () => {
-          let total = 0, sent = 0, pending = 0, failed = 0;
+          let total = 0, sent = 0, pending = 0, failed = 0, confirmed_attendance = 0;
           for (const a of self.appointments) {
             if (a.status === 'confirmada' || a.status === 'reprogramada') {
               total++;
-              if (a.confirmation_sent_at || a.confirmation_status === 'sent') sent++;
+              if (a.confirmation_status === 'asistencia_confirmada') confirmed_attendance++;
+              if (a.confirmation_sent_at || a.confirmation_status === 'sent' || a.confirmation_status === 'asistencia_confirmada') sent++;
               else if (a.confirmation_status === 'failed') failed++;
               else pending++;
             }
           }
-          return { total, sent, pending, failed };
+          return { total, sent, pending, failed, confirmed_attendance };
         }
       };
     }

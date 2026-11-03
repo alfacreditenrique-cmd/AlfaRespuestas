@@ -143,8 +143,9 @@ class ConfirmationProtocolService {
       const dateLabel = scheduler.getDateLabel(apt.date);
       const time12h = scheduler.formatTime12h(apt.time_slot);
       const isFailed = apt.confirmation_status === 'failed';
-      const isSent = !isFailed && Boolean(apt.confirmation_sent_at || apt.confirmation_status === 'sent');
-      const status = isFailed ? 'failed' : (isSent ? 'sent' : 'pending');
+      const isConfirmedAttendance = apt.confirmation_status === 'asistencia_confirmada';
+      const isSent = !isFailed && Boolean(apt.confirmation_sent_at || apt.confirmation_status === 'sent' || isConfirmedAttendance);
+      const status = isFailed ? 'failed' : (isConfirmedAttendance ? 'asistencia_confirmada' : (isSent ? 'sent' : 'pending'));
 
       const isDuplicateInList = seenPhones.has(resolvedPhone);
       seenPhones.add(resolvedPhone);
@@ -170,9 +171,10 @@ class ConfirmationProtocolService {
       };
 
       if (filter === 'pending' && status !== 'pending') continue;
-      if (filter === 'sent' && status !== 'sent') continue;
+      if (filter === 'sent' && status !== 'sent' && status !== 'asistencia_confirmada') continue;
+      if (filter === 'confirmed' && status !== 'asistencia_confirmada') continue;
       if (filter === 'failed' && status !== 'failed') continue;
-      if (filter === 'unconfirmed' && status === 'sent') continue;
+      if (filter === 'unconfirmed' && (status === 'sent' || status === 'asistencia_confirmada')) continue;
 
       result.push(item);
     }
@@ -195,7 +197,7 @@ class ConfirmationProtocolService {
     }
 
     // Regla estricta: 1 solo mensaje por persona a menos que se fuerce explícitamente
-    if (!force && (apt.confirmation_sent_at || apt.confirmation_status === 'sent')) {
+    if (!force && (apt.confirmation_sent_at || apt.confirmation_status === 'sent' || apt.confirmation_status === 'asistencia_confirmada')) {
       return {
         success: false,
         skipped: true,
@@ -333,7 +335,7 @@ class ConfirmationProtocolService {
 
         // Doble verificación: comprobar en base de datos si ya se le envió (idempotencia estricta)
         const currentDbApt = database.getAppointmentById(candidate.id);
-        if (currentDbApt && (currentDbApt.confirmation_sent_at || currentDbApt.confirmation_status === 'sent')) {
+        if (currentDbApt && (currentDbApt.confirmation_sent_at || currentDbApt.confirmation_status === 'sent' || currentDbApt.confirmation_status === 'asistencia_confirmada')) {
           console.log(`[Protocolo Confirmación] ⏭️ Omitiendo ${candidate.candidate_name}: ya confirmado previamente.`);
           skippedCount++;
           continue;

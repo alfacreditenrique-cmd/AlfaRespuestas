@@ -1310,15 +1310,19 @@ function renderConfirmationCandidates(candidates) {
 
   tbody.innerHTML = candidates.map(c => {
     let statusBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">Pendiente</span>';
-    if (c.confirmation_status === 'sent') {
+    if (c.confirmation_status === 'asistencia_confirmada') {
+      statusBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-200 text-emerald-900 shadow-xs" title="Postulante confirmó asistencia a la entrevista presencial">🎉 Confirmó Asistencia</span>';
+    } else if (c.confirmation_status === 'no_asistira' || c.status === 'cancelada') {
+      statusBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-800" title="Postulante indicó que no asistirá">🚫 No Asistirá</span>';
+    } else if (c.confirmation_status === 'sent') {
       const varTxt = c.confirmation_variant ? `Var ${c.confirmation_variant}` : 'Enviado';
       statusBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800" title="Enviado: ${c.confirmation_sent_at || ''}">✅ ${varTxt}</span>`;
     } else if (c.confirmation_status === 'failed') {
       statusBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-800" title="${escapeHtml(c.confirmation_error || '')}">❌ Error</span>`;
     }
 
-    const sendBtn = c.confirmation_status === 'sent'
-      ? `<span class="text-[11px] font-semibold text-slate-400"><i class="fa-solid fa-check-double text-emerald-600"></i> Enviado</span>`
+    const sendBtn = (c.confirmation_status === 'sent' || c.confirmation_status === 'asistencia_confirmada')
+      ? `<span class="text-[11px] font-semibold text-slate-400"><i class="fa-solid fa-check-double text-emerald-600"></i> ${c.confirmation_status === 'asistencia_confirmada' ? 'Confirmado' : 'Enviado'}</span>`
       : `<button onclick="sendSingleCandidateConfirmation(${c.id})" class="px-2.5 py-1 text-[11px] font-bold bg-teal-600 hover:bg-teal-700 text-white rounded transition shadow-xs flex items-center gap-1 ml-auto">
           <i class="fa-solid fa-paper-plane text-[9px]"></i> Enviar
         </button>`;
