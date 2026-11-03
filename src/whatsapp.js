@@ -558,6 +558,46 @@ class WhatsAppService {
     return msg;
   }
 
+  // Detección robusta de intención negativa ("No puedo", "No voy a ir", "Cancelo", "Ya conseguí empleo", etc.)
+  isNegativeConfirmation(text, normalizedText) {
+    const norm = (normalizedText || text || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+    return (
+      /\b(no\s+(puedo|podre|voy|ire|asisto|asistire|asistir|estare|llego|cuenten|tengo\s+tiempo|me\s+presento|me\s+presentare|voy\s+a\s+poder|voy\s+a\s+ir|voy\s+a\s+asistir|voy\s+a\s+presentarme))\b/i.test(norm) ||
+      /\b(no\s+me\s+(es|sera)\s+posible)\b/i.test(norm) ||
+      /\b(cancelo|cancelar|cancelen|cancelacion|ya\s+consegui\s+(empleo|trabajo|chamba)|ya\s+tengo\s+(empleo|trabajo|chamba)|ya\s+estoy\s+trabajando|no\s+cuenten\s+conmigo|desisto|desistir|rechazo)\b/i.test(norm) ||
+      norm === 'no' ||
+      /^no[\s.,!]+$/i.test(norm) ||
+      /^no[\s.,!]+gracias/i.test(norm)
+    );
+  }
+
+  // Detección robusta de intención afirmativa ("Sí", "Confirmo", "Asistiré", "Listo", "De acuerdo", "Ahí estaré", etc.)
+  isAffirmativeConfirmation(text, normalizedText) {
+    const norm = (normalizedText || text || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+    if (this.isNegativeConfirmation(text, norm)) return false;
+
+    return (
+      /\b(si|sip|sii|siii|confirmo|confirmado|confirmada|confirmando|confirmar|confirmacion)\b/i.test(norm) ||
+      /\b(asistire|asisto|asistencia|asistir|voy\s+a\s+asistir|estare|estare\s+presente|estare\s+puntual|presente)\b/i.test(norm) ||
+      /\b(llegare|llego|llegare\s+puntual|ahi\s+llego|alla\s+llego|ahi\s+estare|alla\s+estare)\b/i.test(norm) ||
+      /\b(listo|lista|enterado|enterada|recibido|recibida|anotado|anotada|agendado|agendada)\b/i.test(norm) ||
+      /\b(de\s+acuerdo|cuenta\s+conmigo|cuenten\s+conmigo|si\s+voy|si\s+puedo|afirmativo|por\s+supuesto|claro|seguro)\b/i.test(norm) ||
+      /^(si|ok|okay|dale|listo|lista|confirmo|bien|perfecto|excelente)[\s.,!]*$/i.test(norm)
+    );
+  }
+
+  // Detección de solicitud de reprogramación ("REPROGRAMAR", "cambiar cita", etc.)
+  isRescheduleIntent(text, normalizedText) {
+    const norm = (normalizedText || text || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+    // Si el usuario está confirmando afirmativamente (ej: "Confirmo la cita en mi agenda", "Listo, agendado"), NO es reprogramación
+    if (this.isAffirmativeConfirmation(text, norm) || this.isNegativeConfirmation(text, norm)) return false;
+
+    const rescheduleWords = ['reprogramar', 'reagendar', 'cambiar', 'cambiar cita', 'cambiar fecha', 'cambiar hora', 'nueva cita', 'otra cita', 'otro horario', 'otra fecha', 'reiniciar', 'agendar', 'agenda'];
+    return rescheduleWords.includes(norm) ||
+      /\b(reprogramar|reagendar|cambiar\s+cita|cambiar\s+fecha|cambiar\s+hora|cambiar\s+turno|nueva\s+cita|otra\s+cita|otro\s+horario|otra\s+fecha|reiniciar)\b/i.test(norm) ||
+      /^agendar(\s+cita)?$/i.test(norm);
+  }
+
   // Procesamiento del flujo conversacional
   async handleIncomingMessage(msg) {
     try {
@@ -667,16 +707,15 @@ class WhatsAppService {
       const schedulingKeywords = /\b(agendar|agenda|reagendar|reprogramar|cita|citas|turno|turnos)\b/i;
       const isGeneralInquiryOrScheduling = inquiryKeywords.test(normalizedText) || schedulingKeywords.test(normalizedText);
 
-      // Detección de Intención Negativa ("No puedo", "No voy a ir", "Cancelo", "Ya conseguí empleo")
-      const isNegativeConfirmation =
-        /\b(no\s+(puedo|podre|podr[eé]|voy|voy\s+a\s+ir|ire|ir[eé]|asisto|asistir[eé]|asistire|asistir|estare|estar[eé]|llego)|no\s+me\s+(es|sera|ser[aá])\s+posible|cancelo|cancelar|cancelen|cancelaci[oó]n|ya\s+consegu[ií]\s+(empleo|trabajo|chamba)|ya\s+tengo\s+(empleo|trabajo|chamba)|ya\s+estoy\s+trabajando|no\s+cuenten\s+conmigo)\b/i.test(normalizedText) ||
-        normalizedText === 'no' ||
-        /^no[\s.,!]+$/i.test(normalizedText);
+      // Detección robusta de intenciones
+      const isNegative = this.isNegativeConfirmation(text, normalizedText);
+      const isAffirmative = this.isAffirmativeConfirmation(text, normalizedText);
+      const isReschedule = this.isRescheduleIntent(text, normalizedText);
 
-      // Si el usuario envía comando explícito de reinicio, o intención negativa de cancelación, o si estaba en un estado intermedio
+      // Si el usuario envía comando explícito de reinicio, o si confirma/declina cita, o si estaba en un estado intermedio
       // (AWAITING_DATE, AWAITING_NAME, AWAITING_PHONE) y envía una intención de consulta o agendamiento,
-      // se reinicia el estado para permitirle volver al menú principal, confirmar o cancelar.
-      if (isExplicitReset || isNegativeConfirmation || (state && state.step !== 'AWAITING_POSITION' && isGeneralInquiryOrScheduling)) {
+      // se reinicia el estado para permitirle volver al menú principal, confirmar o declinar.
+      if (isExplicitReset || isNegative || isAffirmative || (state && state.step !== 'AWAITING_POSITION' && isGeneralInquiryOrScheduling)) {
         database.clearChatState(chatId);
         state = null;
       }
@@ -684,33 +723,11 @@ class WhatsAppService {
       // Si no hay estado activo, verificar si ya tiene cita o enviar bienvenida
       if (!state || state.step === 'IDLE' || state.step === 'CONFIRMED') {
         const existingAppointment = database.getAppointmentByPhone(chatId) || (extractedPhone ? database.getAppointmentByPhone(extractedPhone) : null);
-        const rescheduleWords = ['reprogramar', 'reagendar', 'cambiar', 'cambiar cita', 'nueva cita', 'otra cita', 'reiniciar', 'agendar', 'agenda'];
-        const isRescheduleIntent = rescheduleWords.includes(lowerText) ||
-          rescheduleWords.includes(normalizedText) ||
-          /\b(reprogramar|reagendar|cambiar\s+cita|nueva\s+cita|otra\s+cita|reiniciar|agendar|agenda)\b/i.test(normalizedText);
 
         // Si ya tiene cita activa
         if (existingAppointment) {
-          // 1. Si desea reprogramar su cita existente
-          if (isRescheduleIntent) {
-            database.saveChatState(chatId, {
-              step: 'AWAITING_POSITION',
-              candidate_name: existingAppointment.candidate_name,
-              jid: replyJid
-            });
-
-            const notice =
-              `🔄 *REPROGRAMACIÓN DE ENTREVISTA - ${CONFIG.COMPANY_NAME}*\n\n` +
-              `Estimado(a) *${existingAppointment.candidate_name}*, procederemos a reprogramar su cita.\n` +
-              `Su turno anterior se liberará automáticamente al confirmar la nueva fecha.\n\n` +
-              this.getPositionsPrompt();
-
-            await this.reply(replyJid, notice);
-            return;
-          }
-
-          // 2. Detección de Intención Negativa ("No puedo", "No voy a ir", "Cancelo", "Ya conseguí empleo")
-          if (isNegativeConfirmation) {
+          // 1. Detección de Intención Negativa ("No puedo", "No voy a ir", "Cancelo", "Ya conseguí empleo")
+          if (isNegative) {
             console.log(`[WhatsApp] 🛑 Postulante ${existingAppointment.candidate_name} indicó que no asistirá: "${text}". Liberando turno #${existingAppointment.id}.`);
             database.markConfirmationAttendance(existingAppointment.id, false, `Cancelado por el postulante vía WhatsApp: "${text.slice(0, 100)}"`);
 
@@ -729,14 +746,8 @@ class WhatsAppService {
             return;
           }
 
-          // 3. Detección de Intención Afirmativa ("Sí", "Confirmo", "Asistiré", "Listo", "De acuerdo", "Ahí estaré")
-          const isAffirmativeConfirmation =
-            !isNegativeConfirmation && (
-              /\b(si|s[ií]|sip|sii|confirmo|confirmado|confirmada|confirmar|asistir[eé]|asistire|asisto|asistencia|listo|lista|de\s+acuerdo|ah[ií]\s+estar[eé]|ahi\s+estare|all[aá]\s+estar[eé]|alla\s+estare|estare\s+presente|estar[eé]\s+presente|presente|seguro|claro|por\s+supuesto|cuenta\s+conmigo|cuenten\s+conmigo|si\s+voy|si\s+puedo|afirmativo)\b/i.test(normalizedText) ||
-              /^(si|s[ií]|ok|okay|dale|listo|confirmo)[\s.,!]*$/i.test(normalizedText)
-            );
-
-          if (isAffirmativeConfirmation) {
+          // 2. Detección de Intención Afirmativa ("Sí", "Confirmo", "Asistiré", "Listo", "De acuerdo", "Ahí estaré")
+          if (isAffirmative) {
             console.log(`[WhatsApp] ✅ Postulante ${existingAppointment.candidate_name} confirmó asistencia: "${text}". Actualizando cita #${existingAppointment.id}.`);
             database.markConfirmationAttendance(existingAppointment.id, true, `Asistencia confirmada por el postulante vía WhatsApp: "${text.slice(0, 100)}"`);
 
@@ -767,6 +778,24 @@ class WhatsAppService {
             return;
           }
 
+          // 3. Si desea reprogramar su cita existente
+          if (isReschedule) {
+            database.saveChatState(chatId, {
+              step: 'AWAITING_POSITION',
+              candidate_name: existingAppointment.candidate_name,
+              jid: replyJid
+            });
+
+            const notice =
+              `🔄 *REPROGRAMACIÓN DE ENTREVISTA - ${CONFIG.COMPANY_NAME}*\n\n` +
+              `Estimado(a) *${existingAppointment.candidate_name}*, procederemos a reprogramar su cita.\n` +
+              `Su turno anterior se liberará automáticamente al confirmar la nueva fecha.\n\n` +
+              this.getPositionsPrompt();
+
+            await this.reply(replyJid, notice);
+            return;
+          }
+
           // 4. Si ya tiene cita activa y escribe otra consulta regular (no confirmación ni reprogramación)
           const ticket = scheduler.generateTicket(existingAppointment);
           const isAlreadyConfirmed = existingAppointment.confirmation_status === 'asistencia_confirmada';
@@ -782,6 +811,14 @@ class WhatsAppService {
             `ℹ️ *¿Deseas reprogramar tu cita?* Responde con la palabra *"REPROGRAMAR"* o *"REINICIAR"* para cambiar de fecha u horario.`;
           
           await this.reply(replyJid, reply);
+          return;
+        }
+
+        // Si no tiene cita activa y envió intención negativa explícita (ej. "No gracias", "Cancelo")
+        if (isNegative) {
+          const declineMsg =
+            `Entendido. Si en el futuro deseas postularte a las vacantes de *${CONFIG.COMPANY_NAME}*, con gusto te atenderemos escribiendo *"HOLA"*. ¡Muchos éxitos en tus metas laborales y personales!`;
+          await this.reply(replyJid, declineMsg);
           return;
         }
 

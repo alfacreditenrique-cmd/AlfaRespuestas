@@ -43,13 +43,22 @@ test('WhatsApp Protocolo Confirmación: Respuesta Afirmativa ("Sí", "Confirmo",
     // Marcar que se le envió el mensaje de confirmación
     database.markConfirmationSent(target.id, 1, 'Test envio confirmacion');
 
-    // Casos de respuesta afirmativa
+    // Casos de respuesta afirmativa naturales y modismos
     const affirmativePhrases = [
       'Sí, confirmo mi asistencia',
       'Confirmo',
       'Asistiré puntual',
       'Listo, muchas gracias',
-      'De acuerdo, ahí estaré'
+      'De acuerdo, ahí estaré',
+      'Buenas tardes, voy a asistir a la entrevista',
+      'Confirmando mi cita',
+      'Estaré puntual',
+      'Llegaré puntual',
+      'Enterado, muchas gracias',
+      'Recibido, ahí estaré',
+      'Anotado, gracias',
+      'Confirmo la cita en mi agenda',
+      'Listo, anotado en mi agenda'
     ];
 
     for (const phrase of affirmativePhrases) {
@@ -227,8 +236,10 @@ test('Reporte Excel: GET /api/export/excel genera archivo multi-hoja dividido po
       const colFirma = ws.getColumn(7);
       assert.ok(colFirma.width >= 30, 'Columna Firma del Postulante debe tener ancho amplio (>= 30)');
 
-      // 5. Configuración de impresión horizontal (landscape)
+      // 5. Configuración de impresión horizontal (landscape, Carta y títulos repetidos)
       assert.equal(ws.pageSetup.orientation, 'landscape', 'Debe estar configurado en horizontal para impresión directa');
+      assert.equal(ws.pageSetup.paperSize, 1, 'Debe estar configurado en papel Carta (paperSize 1)');
+      assert.equal(ws.pageSetup.printTitlesRow, '5:5', 'Debe repetir los encabezados oficiales en cada página impresa');
 
       // 6. Orden cronológico de llegada (time_slot ascendente)
       const times = [];
@@ -248,6 +259,48 @@ test('Reporte Excel: GET /api/export/excel genera archivo multi-hoja dividido po
     }
   } finally {
     await new Promise(resolve => testServer.close(resolve));
+  }
+});
+
+test('WhatsApp Protocolo Confirmación: Candidato con estado previo en chat_states confirma exitosamente', async () => {
+  setupMockReply();
+  sentReplies = [];
+
+  const candidates = database.listCandidatesForConfirmation();
+  const target = candidates[3];
+  const resolvedPhone = database.resolvePhoneNumber(target.phone_number, target.jid);
+  const chatId = target.jid ? target.jid.split('@')[0] : resolvedPhone;
+
+  const originalConfStatus = target.confirmation_status;
+  const originalSentAt = target.confirmation_sent_at;
+  const originalVariant = target.confirmation_variant;
+
+  try {
+    // Simular que el candidato tenía un estado previo abierto (ej: menú o interacción no concluida)
+    database.saveChatState(chatId, { step: 'AWAITING_POSITION', jid: target.jid || `${resolvedPhone}@s.whatsapp.net` });
+    database.markConfirmationSent(target.id, 1, 'Envio previo');
+
+    // Candidato responde con confirmación natural
+    await whatsappService.handleIncomingMessage({
+      key: { remoteJid: target.jid || `${resolvedPhone}@s.whatsapp.net`, fromMe: false },
+      message: { conversation: 'Buenas tardes, voy a asistir a la entrevista' }
+    });
+
+    assert.equal(sentReplies.length, 1);
+    const reply = sentReplies[0].text;
+    assert.ok(!reply.includes('Opción no válida'), 'NO debe responder con error de opción no válida');
+    assert.ok(reply.includes('confirmada'), 'Debe confirmar su asistencia exitosamente');
+
+    const updated = database.getAppointmentById(target.id);
+    assert.equal(updated.confirmation_status, 'asistencia_confirmada');
+  } finally {
+    database.db.prepare(`
+      UPDATE appointments 
+      SET confirmation_status = ?, confirmation_sent_at = ?, confirmation_variant = ?
+      WHERE id = ?
+    `).run(originalConfStatus, originalSentAt, originalVariant, target.id);
+    database.clearChatState(chatId);
+    restoreMockReply();
   }
 });
 

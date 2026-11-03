@@ -818,7 +818,7 @@ app.get('/api/export/excel', async (req, res) => {
       ERROR_BG: 'FFFEF9C3'          // Ámbar pastel
     };
 
-    // Helper para nombre de hoja válido y descriptivo
+    // Helper para nombre de hoja válido, descriptivo y único
     function formatSheetTabName(dateId, dateLabel) {
       const parts = String(dateId).split('-');
       const day = parts[2] || '01';
@@ -836,6 +836,13 @@ app.get('/api/export/excel', async (req, res) => {
       else if (norm.includes('lunes')) dayOfWeek = 'Lunes';
       else if (norm.includes('sabado')) dayOfWeek = 'Sábado';
       else if (norm.includes('domingo')) dayOfWeek = 'Domingo';
+      else {
+        try {
+          const d = new Date(parseInt(year, 10), Math.max(0, monthIdx), parseInt(day, 10));
+          const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+          dayOfWeek = dayNames[d.getDay()] || '';
+        } catch {}
+      }
 
       let title = `${day}-${monthStr}-${year}`;
       if (dayOfWeek) title += ` (${dayOfWeek})`;
@@ -843,19 +850,29 @@ app.get('/api/export/excel', async (req, res) => {
     }
 
     const dateListToProcess = sortedDateIds.length > 0 ? sortedDateIds : ['2025-11-04'];
+    const usedSheetNames = new Set();
 
     for (const dateId of dateListToProcess) {
       const dateLabel = dateMap.get(dateId) || scheduler.getDateLabel(dateId) || dateId;
-      const sheetName = formatSheetTabName(dateId, dateLabel);
+      let sheetName = formatSheetTabName(dateId, dateLabel);
+      if (usedSheetNames.has(sheetName)) {
+        let counter = 2;
+        while (usedSheetNames.has(`${sheetName.slice(0, 27)} (${counter})`)) {
+          counter++;
+        }
+        sheetName = `${sheetName.slice(0, 27)} (${counter})`;
+      }
+      usedSheetNames.add(sheetName);
 
       const worksheet = workbook.addWorksheet(sheetName, {
         pageSetup: {
           orientation: 'landscape',
-          paperSize: 9, // A4
+          paperSize: 1, // 1 = Letter (Carta), estándar oficial en Nicaragua
           fitToPage: true,
           fitToWidth: 1,
           fitToHeight: 0,
-          margins: { left: 0.4, right: 0.4, top: 0.5, bottom: 0.5, header: 0.3, footer: 0.3 }
+          printTitlesRow: '5:5', // Repetir fila de encabezados oficial en cada página impresa
+          margins: { left: 0.35, right: 0.35, top: 0.45, bottom: 0.45, header: 0.25, footer: 0.25 }
         },
         views: [{ showGridLines: true }]
       });
@@ -863,7 +880,13 @@ app.get('/api/export/excel', async (req, res) => {
       // Filtrar y ordenar candidatos activos de esta fecha (cronológicamente por hora de llegada)
       const dateApts = allAppointments
         .filter(a => a.date === dateId && a.status !== 'cancelada')
-        .sort((a, b) => (a.time_slot || '').localeCompare(b.time_slot || '') || (a.candidate_name || '').localeCompare(b.candidate_name || ''));
+        .sort((a, b) => {
+          const timeA = String(a.time_slot || '').padStart(5, '0');
+          const timeB = String(b.time_slot || '').padStart(5, '0');
+          const timeCmp = timeA.localeCompare(timeB);
+          if (timeCmp !== 0) return timeCmp;
+          return (a.candidate_name || '').localeCompare(b.candidate_name || '');
+        });
 
       // 1. BANNER PRINCIPAL: TÍTULO CORPORATIVO
       worksheet.mergeCells('A1:H1');
@@ -1105,9 +1128,13 @@ app.get('/api/export/excel', async (req, res) => {
       sigRow3.getCell('F').alignment = { horizontal: 'center', vertical: 'top' };
 
       // 7. ANCHO DE COLUMNAS PROFESIONAL Y AMPLIO PARA IMPRESIÓN DIRECTA
+      const colWidths = [6, 22, 34, 28, 18, 24, 36, 30];
+      colWidths.forEach((w, i) => {
+        worksheet.getColumn(i + 1).width = w;
+      });
       worksheet.columns = [
         { width: 6 },  // N°
-        { width: 20 }, // Hora de Cita (ej: 08:30 AM (08:30))
+        { width: 22 }, // Hora de Cita (ej: 08:30 AM (08:30))
         { width: 34 }, // Nombre Completo del Postulante
         { width: 28 }, // Cargo / Plaza Postulada
         { width: 18 }, // Teléfono / WhatsApp
